@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CAD Web Viewer | Лаборатория ПГГПУ</title>
+    <title>CAD Web Viewer | Лаборатория ПТПИТ</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     
-    <!-- Глобальные стабильные скрипты (работают везде без CORS и серверов) -->
+    <!-- Глобальные стабильные скрипты Three.js r132 + GSAP -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>
@@ -42,98 +42,242 @@
         .time-slider { -webkit-appearance: none; appearance: none; width: 120px; height: 4px; background: var(--surface-300); border-radius: 2px; outline: none; margin: 0 8px; }
         .time-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--accent-color); cursor: pointer; }
 
+        .top-actions { display: flex; gap: 8px; }
+        .btn { background: transparent; color: var(--text-primary); border: 1px solid transparent; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s ease; }
+        .btn:hover { background: var(--surface-200); }
+        .btn-outline { border-color: var(--border-color); }
+        .btn-outline:hover { border-color: var(--text-secondary); }
+
         .toolbar-left { position: absolute; top: 48px; left: 0; bottom: 24px; width: 48px; background-color: var(--surface-100); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; padding: 12px 0; gap: 8px; z-index: 9; }
         .tool-btn { width: 32px; height: 32px; border-radius: var(--radius-sm); border: none; background: transparent; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; position: relative; }
         .tool-btn:hover { background: var(--surface-200); color: var(--text-primary); }
         .tool-btn.active { background: rgba(59, 130, 246, 0.15); color: var(--accent-color); border-left: 2px solid var(--accent-color); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
-        .tool-btn::after { content: attr(data-tooltip); position: absolute; left: 42px; background: var(--surface-300); color: var(--text-primary); padding: 4px 8px; border-radius: var(--radius-sm); font-size: 11px; white-space: nowrap; opacity: 0; pointer-events: none; transition: 0.2s; border: 1px solid var(--border-color); z-index: 100; }
-        .tool-btn:hover::after { opacity: 1; }
+        .tool-btn#btn-explode.active { background: rgba(245, 158, 11, 0.15); color: var(--warning-color); border-left-color: var(--warning-color); }
+        .tool-btn::after { content: attr(data-tooltip); position: absolute; left: 42px; background: var(--surface-300); color: var(--text-primary); padding: 4px 8px; border-radius: var(--radius-sm); font-size: 11px; white-space: nowrap; opacity: 0; pointer-events: none; transform: translateX(5px); transition: 0.2s; border: 1px solid var(--border-color); z-index: 100; }
+        .tool-btn:hover::after { opacity: 1; transform: translateX(0); }
         .toolbar-divider { width: 24px; height: 1px; background: var(--border-color); margin: 4px 0; }
+
+        .camera-presets { position: absolute; top: 60px; left: 60px; background: var(--surface-100); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 4px; display: flex; flex-direction: column; gap: 2px; z-index: 8; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .preset-btn { background: transparent; border: none; color: var(--text-secondary); text-align: left; padding: 6px 12px; font-size: 12px; border-radius: var(--radius-sm); cursor: pointer; transition: 0.15s; }
+        .preset-btn:hover { background: var(--surface-200); color: var(--text-primary); }
 
         .properties-panel { position: absolute; top: 48px; right: -320px; bottom: 24px; width: 320px; background: var(--surface-100); border-left: 1px solid var(--border-color); z-index: 9; transition: right 0.3s ease; display: flex; flex-direction: column; }
         .properties-panel.open { right: 0; }
         .panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
         .panel-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-        .close-panel-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; }
+        .close-panel-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; border-radius: var(--radius-sm); }
+        .close-panel-btn:hover { background: var(--surface-200); color: var(--text-primary); }
         .panel-content { padding: 16px; overflow-y: auto; flex: 1; }
-        .obj-tag { display: inline-block; font-size: 10px; text-transform: uppercase; background: var(--surface-200); padding: 3px 6px; border-radius: 3px; margin-bottom: 12px; }
-        .obj-title { font-size: 15px; font-weight: 500; margin-bottom: 8px; }
+        .obj-tag { display: inline-block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; background: var(--surface-200); border: 1px solid var(--border-color); padding: 3px 6px; border-radius: 3px; margin-bottom: 12px; }
+        .obj-title { font-size: 15px; font-weight: 500; margin-bottom: 8px; line-height: 1.4; }
         .obj-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px; }
         .specs-grid { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden; font-family: var(--font-mono); font-size: 11px; }
         .specs-cell { padding: 8px; border-bottom: 1px solid var(--border-color); }
         .specs-grid > div:nth-child(odd) { background: var(--surface-200); color: var(--text-secondary); border-right: 1px solid var(--border-color); }
+        .specs-grid > div:nth-child(even) { color: var(--text-primary); }
+        .specs-grid > div:nth-last-child(-n+2) { border-bottom: none; }
 
-        .statusbar { position: absolute; bottom: 0; left: 0; right: 0; height: 24px; background: var(--surface-100); border-top: 1px solid var(--border-color); color: var(--text-secondary); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font-size: 11px; font-family: var(--font-mono); z-index: 10; }
-        
-        .hotspot-label { background: rgba(27, 29, 34, 0.85); backdrop-filter: blur(4px); border: 1px solid var(--border-color); color: var(--text-primary); padding: 4px 10px; border-radius: 12px; font-size: 11px; cursor: pointer; pointer-events: auto; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+        .statusbar { position: absolute; bottom: 0; left: 0; right: 0; height: 24px; background: var(--surface-100); border-top: 1px solid var(--border-color); color: var(--text-secondary); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font-size: 11px; font-family: var(--font-mono); z-index: 10; transition: background-color 0.3s; }
+        .statusbar.warning { background-color: rgba(245, 158, 11, 0.2); color: var(--warning-color); border-top-color: var(--warning-color); }
+        .status-left { display: flex; gap: 16px; }
+        .status-right { display: flex; gap: 16px; }
+
+        .gost-overlay { position: absolute; inset: 12px; border: 2px solid var(--gost-cyan); pointer-events: none; z-index: 4; display: none; }
+        .gost-overlay.active { display: block; }
+        .gost-stamp { position: absolute; bottom: 0; right: 0; width: 380px; border-top: 2px solid var(--gost-cyan); border-left: 2px solid var(--gost-cyan); background: var(--bg-canvas); font-family: var(--font-mono); font-size: 11px; color: var(--gost-cyan); }
+        .gost-row { display: flex; border-bottom: 1px solid var(--gost-cyan); }
+        .gost-row:last-child { border-bottom: none; }
+        .gost-cell { padding: 4px 8px; border-right: 1px solid var(--gost-cyan); display: flex; align-items: center; }
+        .gost-cell:last-child { border-right: none; }
+
+        .tour-active-indicator { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); background: rgba(59, 130, 246, 0.9); color: white; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 500; display: none; align-items: center; gap: 8px; z-index: 20; box-shadow: 0 4px 12px rgba(0,0,0,0.3); pointer-events: none; }
+        .tour-active-indicator.visible { display: flex; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
+
+        /* Аннотации пропускают клики через контейнер, но ловят клики по плашкам */
+        .hotspot-label { background: rgba(27, 29, 34, 0.88); backdrop-filter: blur(4px); border: 1px solid var(--border-color); color: var(--text-primary); padding: 4px 10px; border-radius: 12px; font-size: 11px; font-family: var(--font-ui); cursor: pointer; pointer-events: auto; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: flex; align-items: center; gap: 6px; }
+        .hotspot-label:hover { background: var(--accent-color); border-color: var(--accent-color); transform: scale(1.05); }
+        .hotspot-label.hidden { display: none; }
         .hotspot-dot { width: 6px; height: 6px; background: var(--accent-color); border-radius: 50%; }
+        .hotspot-label:hover .hotspot-dot { background: #fff; }
 
-        /* Экран загрузки с гарантией скрытия */
-        #loader { position: fixed; inset: 0; background: var(--bg-canvas); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); transition: opacity 0.5s ease; }
-        .spinner { width: 40px; height: 40px; border: 3px solid var(--surface-300); border-top-color: var(--accent-color); border-radius: 50%; animation: spin 1s infinite linear; margin-bottom: 16px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        #loader { position: fixed; inset: 0; background: var(--bg-canvas); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); transition: opacity 0.4s ease; }
+        .progress-bar { width: 200px; height: 2px; background: var(--surface-300); margin-bottom: 12px; position: relative; overflow: hidden; }
+        .progress-fill { position: absolute; top: 0; left: 0; height: 100%; background: var(--accent-color); width: 35%; animation: loadAnim 1s infinite alternate; }
+        @keyframes loadAnim { 0% { transform: translateX(0); } 100% { transform: translateX(130px); } }
+        #file-upload { display: none; }
+
+        @media (max-width: 768px) {
+            #viewport.panel-open { right: 0; }
+            .properties-panel { width: 100%; right: -100%; }
+            .env-controls { display: none; }
+            .camera-presets { left: 56px; top: 12px; }
+            .file-meta { display: none; }
+            .gost-stamp { width: 280px; font-size: 9px; }
+        }
     </style>
+
+    <svg style="display:none;">
+        <symbol id="icon-3d" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x1="12" y1="22.08" x2="12" y2="12"></line></symbol>
+        <symbol id="icon-history" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18"></path><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"></path></symbol>
+        <symbol id="icon-blueprint" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x1="3" y1="9" x2="21" y2="9"></line><line fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x1="9" y1="21" x2="9" y2="9"></line></symbol>
+        <symbol id="icon-camera" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="13" r="4"></circle></symbol>
+        <symbol id="icon-upload" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="17 8 12 3 7 8"></polyline><line fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x1="12" y1="3" x2="12" y2="15"></line></symbol>
+        <symbol id="icon-close" viewBox="0 0 24 24"><line fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x1="18" y1="6" x2="6" y2="18"></line><line fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x1="6" y1="6" x2="18" y2="18"></line></symbol>
+        <symbol id="icon-play" viewBox="0 0 24 24"><polygon fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" points="6 4 19 12 6 20 6 4"></polygon></symbol>
+        <symbol id="icon-label" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><circle fill="currentColor" cx="12" cy="12" r="3"></circle></symbol>
+        <symbol id="icon-explode" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 22v-6"></path><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 8V2"></path><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4.5 17.5l5-2.5"></path><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M19.5 6.5l-5 2.5"></path></symbol>
+    </svg>
 </head>
 <body>
-
-    <div id="loader">
-        <div class="spinner"></div>
-        <div id="loader-text">Загрузка 3D сцены...</div>
-    </div>
+    <div id="loader"><div class="progress-bar"><div class="progress-fill"></div></div><div id="loader-text">Инициализация 3D лаборатории...</div></div>
+    <div class="tour-active-indicator" id="tour-indicator"><svg width="14" height="14"><use href="#icon-play"></use></svg> Автопилот активен</div>
 
     <div class="topbar">
         <div class="brand">
             <div class="brand-logo">3D</div>
-            <div class="file-info"><div class="file-name">ПТПИТ | Лаборатория</div><div class="file-meta">Практичная концепция</div></div>
+            <div class="file-info"><div class="file-name">Концепция ПТПИТ</div><div class="file-meta">Лаборатория инженерной графики</div></div>
         </div>
+        
         <div class="env-controls">
-            <span style="font-size:11px; color:var(--text-secondary); margin-right:8px;">Время:</span>
-            <input type="range" id="time-slider" min="8" max="20" value="12" class="time-slider">
-            <span id="time-display" style="font-family:var(--font-mono); font-size:11px; width:40px; text-align:right;">12:00</span>
+            <span style="font-size:11px; color:var(--text-secondary); margin-right:8px;">Инсоляция:</span>
+            <input type="range" id="time-slider" min="8" max="20" value="12" class="time-slider" title="Время суток">
+            <span id="time-display" style="font-family:var(--font-mono); font-size:11px; width:45px; text-align:right;">12:00</span>
+        </div>
+
+        <div class="top-actions">
+            <label for="file-upload" class="btn btn-outline" style="cursor: pointer;"><svg width="14" height="14"><use href="#icon-upload"></use></svg> Загрузить .GLB</label>
+            <input type="file" id="file-upload" accept=".glb,.gltf">
         </div>
     </div>
 
     <div class="toolbar-left">
-        <button class="tool-btn active" data-tooltip="Проект"><svg width="18" height="18"><use href="#icon-3d"></use></svg></button>
+        <button class="tool-btn active" id="btn-mode-after" data-tooltip="Проект (Доски А2 и стенды)"><svg width="18" height="18"><use href="#icon-3d"></use></svg></button>
+        <button class="tool-btn" id="btn-mode-before" data-tooltip="Исходник (Пустые парты)"><svg width="18" height="18"><use href="#icon-history"></use></svg></button>
+        <button class="tool-btn" id="btn-mode-blueprint" data-tooltip="Чертеж ГОСТ"><svg width="18" height="18"><use href="#icon-blueprint"></use></svg></button>
+        <div class="toolbar-divider"></div>
+        <button class="tool-btn" id="btn-toggle-cams" data-tooltip="Ракурсы камеры"><svg width="18" height="18"><use href="#icon-camera"></use></svg></button>
+        <button class="tool-btn active" id="btn-toggle-labels" data-tooltip="3D Аннотации"><svg width="18" height="18"><use href="#icon-label"></use></svg></button>
+        <div class="toolbar-divider"></div>
+        <button class="tool-btn" id="btn-explode" data-tooltip="Разобрать болт (Анализ)"><svg width="18" height="18"><use href="#icon-explode"></use></svg></button>
+        <button class="tool-btn" id="btn-auto-tour" data-tooltip="Автопилот (Тур)"><svg width="18" height="18"><use href="#icon-play"></use></svg></button>
+    </div>
+
+    <div class="camera-presets" id="camera-menu" style="display: none;">
+        <button class="preset-btn" data-view="overview">1. Общий план</button>
+        <button class="preset-btn" data-view="board">2. Зона преподавателя</button>
+        <button class="preset-btn" data-view="kulman">3. Парты с досками А2</button>
+        <button class="preset-btn" data-view="bolt">4. Стенд "Чертеж Болта"</button>
     </div>
 
     <div id="viewport">
         <div id="canvas-container"></div>
+        <div class="gost-overlay" id="gost-overlay">
+            <div class="gost-stamp">
+                <div class="gost-row"><div class="gost-cell" style="width: 60%;">ПТПИТ. Проект перепланировки</div><div class="gost-cell" style="width: 40%; justify-content: center;">Масштаб 1:50</div></div>
+                <div class="gost-row"><div class="gost-cell" style="width: 20%;">Разраб.</div><div class="gost-cell" style="width: 60%;">Проектная группа</div><div class="gost-cell" style="width: 20%; justify-content: center;">Лист 1</div></div>
+                <div class="gost-row"><div class="gost-cell" style="width: 100%; justify-content: center; font-size: 13px; font-weight: bold; padding: 6px;">КАБИНЕТ ИНЖЕНЕРНОЙ ГРАФИКИ</div></div>
+            </div>
+        </div>
     </div>
 
     <div class="properties-panel" id="prop-panel">
-        <div class="panel-header"><div class="panel-title">Инспектор</div><button class="close-panel-btn" id="btn-close-prop">✕</button></div>
+        <div class="panel-header"><div class="panel-title">Инспектор свойств</div><button class="close-panel-btn" id="btn-close-prop"><svg width="16" height="16"><use href="#icon-close"></use></svg></button></div>
         <div class="panel-content">
             <span class="obj-tag" id="prop-tag">Оборудование</span>
-            <div class="obj-title" id="prop-title">Объект</div>
-            <div class="obj-desc" id="prop-desc">Описание...</div>
+            <div class="obj-title" id="prop-title">Выберите объект...</div>
+            <div class="obj-desc" id="prop-desc">Кликните на элементы мебели или маркеры в 3D-сцене.</div>
             <div class="specs-grid" id="prop-specs" style="display: none;"></div>
         </div>
     </div>
 
     <div class="statusbar">
-        <div class="status-left"><span id="status-msg">Готово (Защита стен активна)</span></div>
-        <div class="status-right"><span>WebGL2</span></div>
+        <div class="status-left"><span id="status-msg">Готово</span><span style="opacity: 0.7;">|</span><span id="status-hint">ЛКМ - вращение | Колесо - зум | Клик - выбор</span></div>
+        <div class="status-right"><span>Render: Three.js WebGL2</span></div>
     </div>
 
-    <svg style="display:none;">
-        <symbol id="icon-3d" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></symbol>
-    </svg>
-
     <script>
-        // Скрипт защиты от зависания и изоляции сцены
+        function hideLoader() {
+            const l = document.getElementById('loader');
+            if (l && l.style.display !== 'none') {
+                l.style.opacity = '0';
+                setTimeout(() => { l.style.display = 'none'; }, 400);
+            }
+        }
+
         try {
+            const ui = {
+                propPanel: document.getElementById('prop-panel'), viewport: document.getElementById('viewport'),
+                camMenu: document.getElementById('camera-menu'), camBtn: document.getElementById('btn-toggle-cams'),
+                gostOverlay: document.getElementById('gost-overlay'),
+                statusMsg: document.getElementById('status-msg'), statusBar: document.querySelector('.statusbar'),
+                tourBtn: document.getElementById('btn-auto-tour'), tourIndicator: document.getElementById('tour-indicator'),
+                labelsBtn: document.getElementById('btn-toggle-labels'), explodeBtn: document.getElementById('btn-explode'),
+                timeSlider: document.getElementById('time-slider'), timeDisplay: document.getElementById('time-display')
+            };
+
+            ui.camBtn.addEventListener('click', () => {
+                ui.camMenu.style.display = ui.camMenu.style.display === 'none' ? 'flex' : 'none';
+            });
+            document.getElementById('btn-close-prop').addEventListener('click', () => {
+                ui.propPanel.classList.remove('open');
+                ui.viewport.classList.remove('panel-open');
+            });
+
+            const DB = {
+                "INT_DeskA2": {
+                    tag: "Рабочее место", title: "Парта с доской А2",
+                    desc: "Новая стандартная парта ПТПИТ, поверх которой установлен наклонный чертежный планшет формата А2. Оптимальное решение без лишних затрат.",
+                    specs: [["Доска", "Формат А2 (600x400)"], ["Угол наклона", "Регулируемый"], ["Размещение", "1 парта - 1 студент"]],
+                    camOffset: {x: 1.4, y: 1.2, z: 1.6}, labelPos: {x: -1.1, y: 1.25, z: 1.5}, labelText: "Планшеты А2"
+                },
+                "INT_DocCam": {
+                    tag: "Преподавание", title: "Стол с Док-камерой",
+                    desc: "Рабочее место преподавателя, оснащенное док-камерой высокого разрешения. Позволяет транслировать процесс черчения и разбор ошибок.",
+                    specs: [["Оборудование", "Док-камера 4K"], ["Связь", "Вывод на ТВ-панель"], ["Расположение", "У окна"]],
+                    camOffset: {x: -1.6, y: 1.0, z: 1.2}, labelPos: {x: 2.0, y: 1.4, z: 3.8}, labelText: "Док-камера"
+                },
+                "INT_Board": {
+                    tag: "Фронт", title: "Доска с ТВ-панелью",
+                    desc: "Объединенная маркерная доска и ТВ-панель для вывода трансляции с док-камеры и показа презентаций.",
+                    specs: [["Доска", "Маркерная белая"], ["Экран", "LED панель 65\""]],
+                    camOffset: {x: 0, y: 1.5, z: 3.0}, labelPos: {x: 0, y: 2.45, z: 4.4}, labelText: "Фронтальная зона"
+                },
+                "INT_BoltStand": {
+                    tag: "Наглядное пособие", title: "Стенд «Чертёж и Деталь»",
+                    desc: "Связка реального чертежа детали по ГОСТу и её физической распечатанной 3D-модели (болта с резьбой).",
+                    specs: [["Чертеж", "Болт ГОСТ 7798-70"], ["Модель", "Физическая, разборная"], ["Назначение", "Чтение чертежей"]],
+                    camOffset: {x: 0, y: 1.2, z: -2.0}, labelPos: {x: -2.6, y: 2.25, z: -4.1}, labelText: "Стенд (Болт)"
+                }
+            };
+
+            const CAMS = {
+                overview: { p: {x: 0, y: 3.4, z: 4.5}, t: {x: 0, y: 0.7, z: -1.5} },
+                board: { p: {x: -0.5, y: 1.6, z: 1.0}, t: {x: 0, y: 1.4, z: 4.3} },
+                kulman: { p: {x: -1.6, y: 1.5, z: 1.4}, t: {x: -0.2, y: 0.8, z: -0.2} },
+                bolt: { p: {x: -0.5, y: 1.7, z: -1.2}, t: {x: -2.8, y: 1.7, z: -4.1} }
+            };
+            const tourKeys = ['overview', 'board', 'kulman', 'bolt'];
+
             const container = document.getElementById('canvas-container');
             const scene = new THREE.Scene();
             scene.background = new THREE.Color(0x121316);
 
-            const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
-            camera.position.set(0, 3.5, 4.8);
+            const aspect = container.clientWidth / container.clientHeight;
+            const perspCamera = new THREE.PerspectiveCamera(45, aspect, 0.1, 100);
+            perspCamera.position.set(CAMS.overview.p.x, CAMS.overview.p.y, CAMS.overview.p.z);
 
-            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            const fs = window.innerWidth < 768 ? 13 : 10;
+            const orthoCamera = new THREE.OrthographicCamera(-fs * aspect / 2, fs * aspect / 2, fs / 2, -fs / 2, 0.1, 50);
+            orthoCamera.position.set(0, 15, 0);
+            orthoCamera.lookAt(0, 0, 0);
+            let activeCamera = perspCamera;
+
+            const renderer = new THREE.WebGLRenderer({ antialias: window.innerWidth > 768 });
             renderer.setSize(container.clientWidth, container.clientHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             container.appendChild(renderer.domElement);
 
             const labelRenderer = new THREE.CSS2DRenderer();
@@ -143,134 +287,478 @@
             labelRenderer.domElement.style.pointerEvents = 'none';
             container.appendChild(labelRenderer.domElement);
 
-            const controls = new THREE.OrbitControls(camera, labelRenderer.domElement);
+            // OrbitControls вешаем на renderer.domElement, а метки поверх имеют pointer-events: auto
+            const controls = new THREE.OrbitControls(perspCamera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.target.set(0, 0.5, -1.5);
+            controls.target.set(CAMS.overview.t.x, CAMS.overview.t.y, CAMS.overview.t.z);
             controls.minDistance = 0.5;
             controls.maxDistance = 8;
-            controls.maxPolarAngle = Math.PI/2 - 0.05;
+            controls.maxPolarAngle = Math.PI / 2 - 0.05;
 
-            // Жесткие границы камеры (Защита от вылетов за стены)
-            const B = { x1:-3.1, x2:3.1, y1:0.2, y2:3.0, z1:-4.3, z2:4.3 };
+            const B = { x1: -3.1, x2: 3.1, y1: 0.2, y2: 3.0, z1: -4.3, z2: 4.3 };
             controls.addEventListener('change', () => {
-                camera.position.x = Math.max(B.x1, Math.min(B.x2, camera.position.x));
-                camera.position.y = Math.max(B.y1, Math.min(B.y2, camera.position.y));
-                camera.position.z = Math.max(B.z1, Math.min(B.z2, camera.position.z));
+                if (activeCamera !== perspCamera) return;
+                perspCamera.position.x = Math.max(B.x1, Math.min(B.x2, perspCamera.position.x));
+                perspCamera.position.y = Math.max(B.y1, Math.min(B.y2, perspCamera.position.y));
+                perspCamera.position.z = Math.max(B.z1, Math.min(B.z2, perspCamera.position.z));
             });
 
-            // Свет
-            scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-            const sun = new THREE.DirectionalLight(0xfffae5, 1.5);
-            sun.position.set(3, 6, 2);
-            sun.castShadow = true;
-            scene.add(sun);
+            // Свет и инсоляция
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+            scene.add(ambientLight);
+            const sunLight = new THREE.DirectionalLight(0xfffae5, 1.4);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.set(1024, 1024);
+            sunLight.shadow.bias = -0.001;
+            scene.add(sunLight);
+            const interiorLights = new THREE.PointLight(0xe0f2fe, 0, 12);
+            interiorLights.position.set(0, 2.8, 0);
+            scene.add(interiorLights);
 
-            // Базовая комната и мебель (Парты с досками А2)
-            const room = new THREE.Group();
-            scene.add(room);
+            function updateTimeOfDay(hour) {
+                const h = parseFloat(hour);
+                ui.timeDisplay.textContent = `${Math.floor(h)}:00`;
+                const t = (h - 8) / 12;
+                sunLight.position.x = 8 - 16 * t;
+                sunLight.position.y = Math.sin(t * Math.PI) * 5 + 1;
+                sunLight.position.z = 4;
 
-            // Пол
-            const floor = new THREE.Mesh(
-                new THREE.PlaneGeometry(6.6, 9),
-                new THREE.MeshStandardMaterial({color: 0x2f333c, roughness: 0.9})
-            );
-            floor.rotation.x = -Math.PI/2;
+                if (h < 10 || h > 18) {
+                    sunLight.color.setHex(0xffaa55);
+                    sunLight.intensity = Math.max(0.25, Math.sin(t * Math.PI) * 1.5);
+                    interiorLights.intensity = 1.0;
+                } else {
+                    sunLight.color.setHex(0xfffae5);
+                    sunLight.intensity = 1.7;
+                    interiorLights.intensity = 0.0;
+                }
+            }
+            ui.timeSlider.addEventListener('input', (e) => updateTimeOfDay(e.target.value));
+            updateTimeOfDay(12);
+
+            // Геометрия
+            const grpProj = new THREE.Group();
+            const grpOld = new THREE.Group();
+            const blueprintGrid = new THREE.GridHelper(10, 20, 0x06b6d4, 0x1e3a8a);
+            blueprintGrid.position.y = 0.02;
+            blueprintGrid.visible = false;
+            scene.add(grpProj, grpOld, blueprintGrid);
+
+            const meshes = [];
+            const labels = [];
+            let showLabels = true;
+            let isExploded = false;
+            const explodeParts = [];
+
+            const matF = new THREE.MeshStandardMaterial({ color: 0x2f333c, roughness: 0.9 });
+            const matW = new THREE.MeshStandardMaterial({ color: 0x9499a3, roughness: 1 });
+            const matWood = new THREE.MeshStandardMaterial({ color: 0x8c7355, roughness: 0.7 });
+            const matMet = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.3, metalness: 0.6 });
+            const matBoltThread = new THREE.MeshStandardMaterial({ color: 0xa1a1aa, roughness: 0.4, metalness: 0.7 });
+            const matBoltHead = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, roughness: 0.3, metalness: 0.8 });
+
+            function makeWall(w, h, d, x, y, z) {
+                const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), matW);
+                m.position.set(x, y, z);
+                m.receiveShadow = true;
+                return m;
+            }
+            function reg(obj, k) {
+                obj.traverse(c => {
+                    if (c.isMesh) {
+                        c.userData = { k: k, root: obj };
+                        meshes.push(c);
+                    }
+                });
+            }
+
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(6.6, 9), matF);
+            floor.rotation.x = -Math.PI / 2;
             floor.receiveShadow = true;
-            room.add(floor);
-
-            // Стены
-            const wallMat = new THREE.MeshStandardMaterial({color: 0x9499a3, roughness: 1});
-            const backW = new THREE.Mesh(new THREE.BoxGeometry(6.6, 3.2, 0.1), wallMat);
-            backW.position.set(0, 1.6, -4.5);
-            room.add(backW);
-
-            // Создаем парту с доской А2 для теста клика
-            const deskGroup = new THREE.Group();
-            deskGroup.position.set(-1, 0, 0);
-            
-            const top = new THREE.Mesh(
-                new THREE.BoxGeometry(1.2, 0.03, 0.5),
-                new THREE.MeshStandardMaterial({color: 0xe5e7eb})
+            scene.add(
+                floor,
+                makeWall(6.6, 3.2, 0.1, 0, 1.6, -4.55),
+                makeWall(6.6, 3.2, 0.1, 0, 1.6, 4.55),
+                makeWall(0.1, 3.2, 9, -3.35, 1.6, 0),
+                makeWall(0.1, 3.2, 9, 3.35, 1.6, 0)
             );
-            top.position.y = 0.74;
-            top.castShadow = true;
-            
-            // Задаем уникальный ключ для инспектора
-            top.userData = { 
-                title: "Парта с доской А2", 
-                desc: "Новая стандартная парта ПТПИТ с наклонным планшетом.",
-                specs: [["Формат", "А2"], ["Тип", "Накладная"]] 
-            };
-            deskGroup.add(top);
-            room.add(deskGroup);
 
-            // Интерактивность (Клик по объектам)
-            const raycaster = new THREE.Raycaster();
-            const mouse = new THREE.Vector2();
-            const clickables = [top];
+            // Пилястры (колонны слева) и окна (справа)
+            [-1.8, 1.2].forEach(z => {
+                const p = makeWall(0.28, 3.2, 0.55, -3.2, 1.6, z);
+                p.castShadow = true;
+                scene.add(p);
+            });
+            [-2.7, 0, 2.7].forEach(z => {
+                const win = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.06, 1.75, 1.65),
+                    new THREE.MeshStandardMaterial({ color: 0xbae6fd, emissive: 0x38bdf8, emissiveIntensity: 0.25 })
+                );
+                win.position.set(3.28, 1.72, z);
+                scene.add(win);
+            });
 
-            renderer.domElement.addEventListener('pointerup', (e) => {
-                const rect = renderer.domElement.getBoundingClientRect();
-                mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-                mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            function createLabel(text, pos, key) {
+                const div = document.createElement('div');
+                div.className = 'hotspot-label';
+                div.innerHTML = `<div class="hotspot-dot"></div><span>${text}</span>`;
+                div.addEventListener('pointerdown', (e) => {
+                    e.stopPropagation();
+                    openProps(null, DB[key], true);
+                });
+                const label = new THREE.CSS2DObject(div);
+                label.position.set(pos.x, pos.y, pos.z);
+                grpProj.add(label);
+                labels.push(div);
+            }
 
-                raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects(clickables);
+            function bDeskA2(x, z) {
+                const g = new THREE.Group();
+                g.position.set(x, 0, z);
+                const top = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.03, 0.5), new THREE.MeshStandardMaterial({ color: 0xe5e7eb }));
+                top.position.y = 0.74; top.castShadow = true; top.receiveShadow = true;
+                const frame = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.02, 0.4), matMet);
+                frame.position.y = 0.71;
+                const legL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.71, 0.4), matMet);
+                legL.position.set(-0.53, 0.355, 0); legL.castShadow = true;
+                const legR = legL.clone(); legR.position.x = 0.53;
 
-                if (intersects.length > 0) {
-                    const data = intersects[0].object.userData;
-                    document.getElementById('prop-title').textContent = data.title;
-                    document.getElementById('prop-desc').textContent = data.desc;
-                    
-                    const specsGrid = document.getElementById('prop-specs');
-                    specsGrid.style.display = 'grid';
-                    specsGrid.innerHTML = data.specs.map(s => `<div class="specs-cell">${s[0]}</div><div class="specs-cell">${s[1]}</div>`).join('');
-                    
-                    document.getElementById('prop-panel').classList.add('open');
-                    document.getElementById('viewport').classList.add('panel-open');
+                const boardGroup = new THREE.Group();
+                boardGroup.position.set(0, 0.755, 0.15);
+                boardGroup.rotation.x = -0.4;
+                const boardBase = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.02, 0.45), matWood);
+                boardBase.position.set(0, 0.01, -0.225);
+                const paper = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.005, 0.4), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+                paper.position.set(0, 0.025, -0.225);
+                boardGroup.add(boardBase, paper);
+
+                g.add(top, frame, legL, legR, boardGroup);
+                return g;
+            }
+
+            function bTeacherDesk(x, z) {
+                const g = new THREE.Group();
+                g.position.set(x, 0, z);
+                const top = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.03, 0.5), new THREE.MeshStandardMaterial({ color: 0xe5e7eb }));
+                top.position.y = 0.74; top.castShadow = true; top.receiveShadow = true;
+                const frame = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.02, 0.4), matMet);
+                frame.position.y = 0.71;
+                const legL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.71, 0.4), matMet);
+                legL.position.set(-0.53, 0.355, 0); legL.castShadow = true;
+                const legR = legL.clone(); legR.position.x = 0.53;
+
+                const dcBase = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.02, 0.15), matMet);
+                dcBase.position.set(-0.4, 0.765, -0.15);
+                const dcStand = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.4), matMet);
+                dcStand.position.set(-0.4, 0.965, -0.2);
+                const dcHead = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.02, 0.12), matMet);
+                dcHead.position.set(-0.4, 1.165, -0.15);
+
+                g.add(top, frame, legL, legR, dcBase, dcStand, dcHead);
+                return g;
+            }
+
+            function bBoltStand() {
+                const g = new THREE.Group();
+                g.position.set(-3.25, 1.6, -4.1);
+
+                const poster = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.9, 1.4), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+                poster.position.set(0, 0.5, 0);
+                const shelf = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.04, 1.4), matWood);
+                shelf.position.set(0.1, 0, 0);
+
+                const boltGroup = new THREE.Group();
+                boltGroup.position.set(0.15, 0.1, 0);
+
+                const hexHead = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.08, 6), matBoltHead);
+                hexHead.rotation.x = Math.PI / 2; hexHead.rotation.z = Math.PI / 2;
+                hexHead.position.set(-0.1, 0, 0);
+
+                const threadBody = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.25, 16), matBoltThread);
+                threadBody.rotation.z = Math.PI / 2;
+                threadBody.position.set(0.065, 0, 0);
+
+                boltGroup.add(hexHead, threadBody);
+
+                explodeParts.push({ mesh: hexHead, basePos: new THREE.Vector3(-0.1, 0, 0), explodePos: new THREE.Vector3(-0.3, 0, 0) });
+                explodeParts.push({ mesh: threadBody, basePos: new THREE.Vector3(0.065, 0, 0), explodePos: new THREE.Vector3(0.22, 0, 0) });
+
+                g.add(poster, shelf, boltGroup);
+                return g;
+            }
+
+            [-2.4, -1.1, 0.2, 1.5].forEach(z => {
+                const k1 = bDeskA2(-2, z); reg(k1, "INT_DeskA2");
+                const k2 = bDeskA2(-0.2, z); reg(k2, "INT_DeskA2");
+                grpProj.add(k1, k2);
+            });
+            [-1.1, 0.2, 1.5].forEach(z => {
+                const c = bDeskA2(2, z); reg(c, "INT_DeskA2");
+                grpProj.add(c);
+            });
+
+            const tDesk = bTeacherDesk(2.0, 3.8);
+            tDesk.rotation.y = Math.PI;
+            reg(tDesk, "INT_DocCam");
+
+            const brd = new THREE.Mesh(new THREE.BoxGeometry(3, 1.2, 0.05), new THREE.MeshStandardMaterial({ color: 0xeeeeee }));
+            brd.position.set(-0.3, 1.6, 4.45);
+            reg(brd, "INT_Board");
+
+            const cab = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.9, 0.6), matWood);
+            cab.position.set(2.1, 0.45, 4.1);
+
+            const wardrobe = new THREE.Mesh(new THREE.BoxGeometry(3.0, 2.2, 0.5), new THREE.MeshStandardMaterial({ color: 0xf1f5f9 }));
+            wardrobe.position.set(0.3, 1.1, -4.2);
+
+            const bStand = bBoltStand();
+            reg(bStand, "INT_BoltStand");
+
+            grpProj.add(tDesk, brd, cab, wardrobe, bStand);
+
+            Object.keys(DB).forEach(k => {
+                if (DB[k].labelPos) createLabel(DB[k].labelText, DB[k].labelPos, k);
+            });
+
+            function createOldDesk(x, z) {
+                const g = new THREE.Group();
+                g.position.set(x, 0, z);
+                const top = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.03, 0.5), new THREE.MeshStandardMaterial({ color: 0xe5e7eb }));
+                top.position.y = 0.74;
+                const legs = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.72, 0.44), matMet);
+                legs.position.y = 0.36;
+                g.add(top, legs);
+                return g;
+            }
+            [-2.0, 0, 2.0].forEach(x => {
+                [-2.8, -1.5, -0.2, 1.1, 2.4].forEach(z => {
+                    grpOld.add(createOldDesk(x, z));
+                });
+            });
+            grpOld.visible = false;
+
+            // Режимы
+            const bA = document.getElementById('btn-mode-after');
+            const bB = document.getElementById('btn-mode-before');
+            const bC = document.getElementById('btn-mode-blueprint');
+
+            function setMode(m) {
+                [bA, bB, bC].forEach(b => b.classList.remove('active'));
+                if (m !== 'blueprint' && activeCamera === orthoCamera) {
+                    activeCamera = perspCamera;
+                    blueprintGrid.visible = false;
+                    ui.gostOverlay.classList.remove('active');
+                }
+                if (m === 'proj') {
+                    bA.classList.add('active');
+                    grpProj.visible = true;
+                    grpOld.visible = false;
+                    ui.statusMsg.textContent = "Режим: Утвержденный Проект";
+                } else if (m === 'old') {
+                    bB.classList.add('active');
+                    grpProj.visible = false;
+                    grpOld.visible = true;
+                    ui.statusMsg.textContent = "Режим: Исходник (Пусто)";
+                    ui.propPanel.classList.remove('open');
+                    ui.viewport.classList.remove('panel-open');
+                } else {
+                    bC.classList.add('active');
+                    activeCamera = orthoCamera;
+                    blueprintGrid.visible = true;
+                    ui.gostOverlay.classList.add('active');
+                    ui.statusMsg.textContent = "Режим: Чертеж (Вид сверху)";
+                    ui.propPanel.classList.remove('open');
+                    ui.viewport.classList.remove('panel-open');
+                }
+                if (tourActive) toggleTour();
+            }
+            bA.addEventListener('click', () => setMode('proj'));
+            bB.addEventListener('click', () => setMode('old'));
+            bC.addEventListener('click', () => setMode('blueprint'));
+
+            ui.labelsBtn.addEventListener('click', () => {
+                showLabels = !showLabels;
+                ui.labelsBtn.classList.toggle('active', showLabels);
+                labels.forEach(l => l.classList.toggle('hidden', !showLabels));
+            });
+
+            // Взрыв-схема болта
+            ui.explodeBtn.addEventListener('click', () => {
+                isExploded = !isExploded;
+                ui.explodeBtn.classList.toggle('active', isExploded);
+
+                if (isExploded && activeCamera === perspCamera) {
+                    gsap.to(perspCamera.position, { x: -1.5, y: 1.8, z: -2.0, duration: 1.2, ease: "power2.out" });
+                    gsap.to(controls.target, { x: -3.2, y: 1.7, z: -4.1, duration: 1.2, ease: "power2.out" });
+                    ui.statusBar.classList.add('warning');
+                    ui.statusMsg.textContent = "Анализ: Устройство болтового соединения";
+                } else {
+                    ui.statusBar.classList.remove('warning');
+                    ui.statusMsg.textContent = "Готово";
+                }
+
+                explodeParts.forEach(part => {
+                    const targetPos = isExploded ? part.explodePos : part.basePos;
+                    gsap.to(part.mesh.position, { x: targetPos.x, y: targetPos.y, z: targetPos.z, duration: 0.8, ease: "back.out(1.2)" });
+                });
+            });
+
+            // Автопилот
+            let tourActive = false, tourTimer = null, tourIdx = 0;
+            function nextTourStep() {
+                if (!tourActive) return;
+                const v = CAMS[tourKeys[tourIdx]];
+                if (activeCamera === orthoCamera) setMode('proj');
+                gsap.to(perspCamera.position, { x: v.p.x, y: v.p.y, z: v.p.z, duration: 2.8, ease: "power2.inOut" });
+                gsap.to(controls.target, { x: v.t.x, y: v.t.y, z: v.t.z, duration: 2.8, ease: "power2.inOut" });
+                tourIdx = (tourIdx + 1) % tourKeys.length;
+                tourTimer = setTimeout(nextTourStep, 5000);
+            }
+            function toggleTour() {
+                tourActive = !tourActive;
+                if (tourActive) {
+                    ui.tourBtn.classList.add('active');
+                    ui.tourIndicator.classList.add('visible');
+                    ui.statusMsg.textContent = "Автопилот";
+                    ui.propPanel.classList.remove('open');
+                    ui.viewport.classList.remove('panel-open');
+                    ui.camMenu.style.display = 'none';
+                    tourIdx = 0;
+                    nextTourStep();
+                } else {
+                    ui.tourBtn.classList.remove('active');
+                    ui.tourIndicator.classList.remove('visible');
+                    clearTimeout(tourTimer);
+                    ui.statusMsg.textContent = "Готово";
+                }
+            }
+            ui.tourBtn.addEventListener('click', toggleTour);
+
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.addEventListener('click', e => {
+                    if (tourActive) toggleTour();
+                    const v = CAMS[e.target.dataset.view];
+                    if (!v) return;
+                    if (activeCamera === orthoCamera) setMode('proj');
+                    gsap.to(perspCamera.position, { x: v.p.x, y: v.p.y, z: v.p.z, duration: 1.2, ease: "power2.inOut" });
+                    gsap.to(controls.target, { x: v.t.x, y: v.t.y, z: v.t.z, duration: 1.2, ease: "power2.inOut" });
+                    ui.camMenu.style.display = 'none';
+                });
+            });
+
+            // Raycaster (клики по 3D-объектам)
+            const ray = new THREE.Raycaster();
+            const ms = new THREE.Vector2();
+            let pt = { x: 0, y: 0 };
+
+            renderer.domElement.addEventListener('pointerdown', e => {
+                pt = { x: e.clientX, y: e.clientY };
+            });
+            renderer.domElement.addEventListener('pointerup', e => {
+                if (Math.hypot(e.clientX - pt.x, e.clientY - pt.y) > 5 || !grpProj.visible) return;
+                if (tourActive) toggleTour();
+                const bR = container.getBoundingClientRect();
+                ms.x = ((e.clientX - bR.left) / bR.width) * 2 - 1;
+                ms.y = -((e.clientY - bR.top) / bR.height) * 2 + 1;
+                ray.setFromCamera(ms, activeCamera);
+                const hit = ray.intersectObjects(meshes, false)[0];
+                if (hit && DB[hit.object.userData.k]) {
+                    openProps(hit.object.userData.root, DB[hit.object.userData.k]);
                 }
             });
 
-            document.getElementById('btn-close-prop').addEventListener('click', () => {
-                document.getElementById('prop-panel').classList.remove('open');
-                document.getElementById('viewport').classList.remove('panel-open');
+            function openProps(grp, d, fromLabel = false) {
+                if (tourActive) toggleTour();
+                if (activeCamera === perspCamera && grp && !fromLabel) {
+                    const b = new THREE.Box3().setFromObject(grp);
+                    const c = new THREE.Vector3();
+                    b.getCenter(c);
+                    gsap.to(perspCamera.position, { x: c.x + d.camOffset.x, y: c.y + d.camOffset.y, z: c.z + d.camOffset.z, duration: 0.8, ease: "power2.out" });
+                    gsap.to(controls.target, { x: c.x, y: c.y, z: c.z, duration: 0.8, ease: "power2.out" });
+                }
+                document.getElementById('prop-tag').textContent = d.tag;
+                document.getElementById('prop-title').textContent = d.title;
+                document.getElementById('prop-desc').textContent = d.desc;
+
+                const sp = document.getElementById('prop-specs');
+                sp.style.display = 'grid';
+                sp.innerHTML = d.specs.map(s => `<div class="specs-cell">${s[0]}</div><div class="specs-cell">${s[1]}</div>`).join('');
+
+                ui.propPanel.classList.add('open');
+                if (window.innerWidth > 768) ui.viewport.classList.add('panel-open');
+            }
+
+            // Загрузка внешнего GLB
+            const loader = new THREE.GLTFLoader();
+            const draco = new THREE.DRACOLoader();
+            draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.1/');
+            loader.setDRACOLoader(draco);
+
+            document.getElementById('file-upload').addEventListener('change', e => {
+                const f = e.target.files[0];
+                if (!f) return;
+                const l = document.getElementById('loader');
+                document.getElementById('loader-text').textContent = 'Загрузка модели...';
+                l.style.display = 'flex';
+                setTimeout(() => { l.style.opacity = '1'; }, 10);
+
+                const objUrl = URL.createObjectURL(f);
+                loader.load(objUrl, gltf => {
+                    grpProj.clear();
+                    meshes.length = 0;
+                    labels.forEach(lbl => lbl.remove());
+                    labels.length = 0;
+
+                    gltf.scene.traverse(c => {
+                        if (c.isMesh) {
+                            c.castShadow = true;
+                            c.receiveShadow = true;
+                            Object.keys(DB).forEach(k => {
+                                if (c.name.startsWith(k)) {
+                                    c.userData = { k: k, root: c };
+                                    meshes.push(c);
+                                }
+                            });
+                        }
+                    });
+                    grpProj.add(gltf.scene);
+                    setMode('proj');
+                    URL.revokeObjectURL(objUrl);
+                    hideLoader();
+                }, undefined, err => {
+                    console.error(err);
+                    hideLoader();
+                });
             });
 
-            // Инсоляция (Ползунок времени)
-            document.getElementById('time-slider').addEventListener('input', (e) => {
-                let h = e.target.value;
-                document.getElementById('time-display').textContent = h + ':00';
-                sun.position.x = (h - 14);
+            // Адаптация под размер экрана
+            window.addEventListener('resize', () => {
+                const w = container.clientWidth, h = container.clientHeight, a = w / h;
+                perspCamera.aspect = a;
+                perspCamera.updateProjectionMatrix();
+                const ffs = w < 768 ? 13 : 10;
+                orthoCamera.left = -ffs * a / 2;
+                orthoCamera.right = ffs * a / 2;
+                orthoCamera.top = ffs / 2;
+                orthoCamera.bottom = -ffs / 2;
+                orthoCamera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+                labelRenderer.setSize(w, h);
             });
 
-            // Анимационный цикл
             function animate() {
                 requestAnimationFrame(animate);
-                controls.update();
-                renderer.render(scene, camera);
-                labelRenderer.render(scene, camera);
+                if (activeCamera === perspCamera) controls.update();
+                renderer.render(scene, activeCamera);
+                if (showLabels && activeCamera === perspCamera && grpProj.visible) {
+                    labelRenderer.render(scene, activeCamera);
+                }
             }
             animate();
 
-            // ГАРАНТИРОВАННОЕ СКРЫТИЕ ЛОАДЕРА (Устранение зависания)
-            window.addEventListener('load', () => {
-                const loader = document.getElementById('loader');
-                if (loader) {
-                    loader.style.opacity = '0';
-                    setTimeout(() => loader.style.display = 'none', 400);
-                }
-            });
-            
-            // Защитный таймер на случай, если событие load уже прошло
-            setTimeout(() => {
-                const loader = document.getElementById('loader');
-                if (loader && loader.style.display !== 'none') {
-                    loader.style.opacity = '0';
-                    setTimeout(() => loader.style.display = 'none', 400);
-                }
-            }, 1000);
-
+            // Скрытие стартового лоадера
+            setTimeout(hideLoader, 600);
         } catch (err) {
             console.error("Ошибка инициализации 3D:", err);
             document.getElementById('loader-text').textContent = "Ошибка запуска: " + err.message;
