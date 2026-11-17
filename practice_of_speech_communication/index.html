@@ -6,7 +6,7 @@
     <title>CAD Web Viewer | Инженерный 3D-просмотрщик</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     
-    <!-- Стабильные глобальные библиотеки (работают без локального сервера и на GitHub Pages) -->
+    <!-- Стабильные глобальные библиотеки Three.js r132 (работают локально и на GitHub Pages) -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>
@@ -67,7 +67,7 @@
         .file-meta { font-size: 11px; color: var(--text-secondary); }
 
         .top-actions { display: flex; gap: 8px; align-items: center; }
-        .btn { background: var(--surface-200); color: var(--text-primary); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: 0.15s; }
+        .btn { background: var(--surface-200); color: var(--text-primary); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: 0.15s; font-family: var(--font-ui); }
         .btn:hover { background: var(--surface-300); border-color: var(--text-secondary); }
         .btn-primary { background: var(--accent-color); border-color: var(--accent-color); color: #fff; }
         .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
@@ -105,7 +105,7 @@
         .eng-tab {
             background: transparent; border: none; border-bottom: 2px solid transparent;
             color: var(--text-secondary); padding: 9px 4px; font-size: 11px; font-weight: 500;
-            cursor: pointer; transition: 0.15s; text-align: center;
+            cursor: pointer; transition: 0.15s; text-align: center; font-family: var(--font-ui);
         }
         .eng-tab:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
         .eng-tab.active { color: var(--gost-cyan); border-bottom-color: var(--gost-cyan); background: rgba(6, 182, 212, 0.08); }
@@ -209,7 +209,8 @@
         .spinner { width: 32px; height: 32px; border: 3px solid var(--surface-300); border-top-color: var(--accent-color); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 12px; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        input[type="file"] { display: none; }
+        /* Скрытые инпуты без display:none для 100% совместимости со всеми браузерами */
+        .file-input-hidden { position: absolute; width: 0; height: 0; opacity: 0; pointer-events: none; overflow: hidden; }
 
         @media (max-width: 768px) {
             #viewport.panel-open { right: 0; }
@@ -236,6 +237,11 @@
     <div id="loader"><div class="spinner"></div><div id="loader-text">Обработка файла...</div></div>
     <div class="tour-indicator" id="tour-indicator"><svg width="12" height="12"><use href="#icon-play"></use></svg> Автотур по 3D-модели</div>
 
+    <!-- Скрытые инпуты файлов -->
+    <input type="file" id="glb-input" class="file-input-hidden" accept=".glb,.gltf">
+    <input type="file" id="docx-input" class="file-input-hidden" accept=".docx">
+    <input type="file" id="drawing-input" class="file-input-hidden" accept=".cdw,.spw,.frw,.m3d,.a3d,.png,.jpg,.jpeg,.webp,.svg">
+
     <!-- Верхняя панель -->
     <div class="topbar">
         <div class="brand">
@@ -247,23 +253,20 @@
         </div>
 
         <div class="top-actions">
-            <label for="glb-input" class="btn btn-primary">
+            <button type="button" class="btn btn-primary" id="btn-trigger-glb">
                 <svg width="14" height="14"><use href="#icon-cube"></use></svg>
                 <span>Загрузить .GLB</span>
-            </label>
-            <input type="file" id="glb-input" accept=".glb,.gltf">
+            </button>
 
-            <label for="docx-input" class="btn" title="Прикрепить DOCX-описание к 3D-модели">
+            <button type="button" class="btn" id="btn-trigger-docx" title="Прикрепить DOCX-описание к 3D-модели">
                 <svg width="14" height="14"><use href="#icon-doc"></use></svg>
                 <span class="btn-text-hide">+ Аннотация (.DOCX)</span>
-            </label>
-            <input type="file" id="docx-input" accept=".docx">
+            </button>
 
-            <label for="drawing-input" class="btn" title="Прикрепить чертеж КОМПАС (.cdw, .spw, .png, .jpg)">
+            <button type="button" class="btn" id="btn-trigger-drawing" title="Прикрепить чертеж КОМПАС (.cdw, .spw, .png, .jpg)">
                 <svg width="14" height="14"><use href="#icon-blueprint"></use></svg>
                 <span class="btn-text-hide">+ Чертёж (КОМПАС)</span>
-            </label>
-            <input type="file" id="drawing-input" accept=".cdw,.spw,.frw,.m3d,.a3d,.png,.jpg,.jpeg,.webp,.svg">
+            </button>
         </div>
     </div>
 
@@ -273,14 +276,13 @@
         <button class="tool-btn" id="btn-tour" data-tooltip="Автотур (Облет 360°)"><svg width="18" height="18"><use href="#icon-play"></use></svg></button>
         <button class="tool-btn" id="btn-wireframe" data-tooltip="Сетка полигонов"><svg width="18" height="18"><use href="#icon-wire"></use></svg></button>
         <div class="toolbar-divider"></div>
-        <!-- Единая кнопка "Инженер" с 3 функциями внутри -->
         <button class="tool-btn" id="btn-engineer" data-tooltip="Инженер (Масса, Разрез, Линейка)"><svg width="18" height="18"><use href="#icon-engineer"></use></svg></button>
         <div class="toolbar-divider"></div>
         <button class="tool-btn active" id="btn-toggle-hotspot" data-tooltip="Показать/скрыть 3D-аннотацию"><svg width="18" height="18"><use href="#icon-tag"></use></svg></button>
         <button class="tool-btn" id="btn-toggle-panel" data-tooltip="Паспорт и чертёж"><svg width="18" height="18"><use href="#icon-panel"></use></svg></button>
     </div>
 
-    <!-- Компактное меню «Инженер» (3 инструмента на выбор) -->
+    <!-- Компактное меню «Инженер» -->
     <div class="engineer-popover" id="engineer-popover">
         <div class="eng-header">
             <div class="eng-title"><svg width="14" height="14"><use href="#icon-engineer"></use></svg> Инструменты инженера</div>
@@ -338,17 +340,17 @@
                     <div class="form-label"><span>Сечение по оси Z</span><span id="clip-z-val">100%</span></div>
                     <input type="range" class="clip-slider" id="clip-z" min="0" max="100" value="100">
                 </div>
-                <button class="btn btn-sm" id="btn-reset-clip" style="width: 100%; justify-content: center;">Сбросить разрезы</button>
+                <button type="button" class="btn btn-sm" id="btn-reset-clip" style="width: 100%; justify-content: center;">Сбросить разрезы</button>
             </div>
 
             <!-- Вкладка 3: Линейка (Точечный замер) -->
             <div class="eng-pane" id="pane-ruler">
-                <button class="btn btn-primary btn-sm" id="btn-toggle-ruler" style="width: 100%; justify-content: center;">Включить замер по 2 точкам</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btn-toggle-ruler" style="width: 100%; justify-content: center;">Включить замер по 2 точкам</button>
                 <div class="ruler-status">
                     <span style="font-size: 11px; color: var(--text-secondary);" id="ruler-hint">Нажмите кнопку выше и кликните на две точки на 3D-модели.</span>
                     <div class="ruler-val" id="ruler-result">—</div>
                 </div>
-                <button class="btn btn-sm" id="btn-clear-ruler" style="width: 100%; justify-content: center;">Очистить замер</button>
+                <button type="button" class="btn btn-sm" id="btn-clear-ruler" style="width: 100%; justify-content: center;">Очистить замер</button>
             </div>
         </div>
     </div>
@@ -361,7 +363,7 @@
                 <h2>Загрузите 3D-модель (.GLB)</h2>
                 <p>Перетащите файл <b>.glb</b> сюда или выберите с диска. После загрузки можно прикрепить <b>.docx</b> для создания 3D-аннотации, чертёж <b>КОМПАС-3D</b> и открыть меню <b>«Инженер»</b>.</p>
                 <div class="drop-actions">
-                    <label for="glb-input" class="btn btn-primary">Выбрать .GLB файл</label>
+                    <button type="button" class="btn btn-primary" id="btn-empty-glb">Выбрать .GLB файл</button>
                 </div>
             </div>
         </div>
@@ -402,7 +404,7 @@
         <img id="modal-drawing-img" src="" alt="Чертёж">
         <div class="modal-bar">
             <span id="modal-drawing-name" style="font-size: 12px; font-family: var(--font-mono); color: var(--text-secondary);"></span>
-            <button class="btn" id="btn-close-modal">Закрыть</button>
+            <button type="button" class="btn" id="btn-close-modal">Закрыть</button>
         </div>
     </div>
 
@@ -417,6 +419,16 @@
         function showLoader(text) { loaderText.textContent = text || 'Загрузка...'; loaderOverlay.classList.add('visible'); }
         function hideLoader() { loaderOverlay.classList.remove('visible'); }
 
+        // Привязка кнопок открытия диалогов файлов
+        const glbInput = document.getElementById('glb-input');
+        const docxInput = document.getElementById('docx-input');
+        const drawingInput = document.getElementById('drawing-input');
+
+        document.getElementById('btn-trigger-glb').addEventListener('click', () => glbInput.click());
+        document.getElementById('btn-empty-glb').addEventListener('click', () => glbInput.click());
+        document.getElementById('btn-trigger-docx').addEventListener('click', () => docxInput.click());
+        document.getElementById('btn-trigger-drawing').addEventListener('click', () => drawingInput.click());
+
         // --- 1. Инициализация сцены ---
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
@@ -425,7 +437,7 @@
         const gridHelper = new THREE.GridHelper(10, 20, 0x2f333c, 0x1e2026);
         scene.add(gridHelper);
 
-        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.05, 500);
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.01, 1000);
         camera.position.set(2.5, 2.0, 2.5);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
@@ -448,12 +460,14 @@
         controls.enableDamping = true;
         controls.dampingFactor = 0.06;
 
-        scene.add(new THREE.AmbientLight(0xffffff, 0.9));
-        const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        // Многостороннее студийное освещение (корректно высвечивает и металл, и интерьеры)
+        scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+        scene.add(new THREE.HemisphereLight(0xffffff, 0x3b4252, 0.65));
+        const keyLight = new THREE.DirectionalLight(0xffffff, 1.1);
         keyLight.position.set(5, 10, 7);
         scene.add(keyLight);
         const fillLight = new THREE.DirectionalLight(0xdbeafe, 0.6);
-        fillLight.position.set(-5, -3, -5);
+        fillLight.position.set(-5, 4, -5);
         scene.add(fillLight);
 
         // --- 2. Состояние ---
@@ -780,7 +794,6 @@
             raycaster.setFromCamera(pointerNDC, camera);
             const rawHits = raycaster.intersectObjects(modelMeshes, false);
 
-            // Учитываем активные разрезы: игнорируем невидимые отсечённые грани
             const validHits = activeClipPlanes.length > 0
                 ? rawHits.filter(h => activeClipPlanes.every(pl => pl.distanceToPoint(h.point) >= -1e-4))
                 : rawHits;
@@ -791,10 +804,25 @@
         });
 
         // --- 7. Загрузка и нормализация .GLB файла ---
+        // ИСПРАВЛЕНО: THREE.DRACOLoader вместо глобального DRACOLoader
         const gltfLoader = new THREE.GLTFLoader();
-        const dracoLoader = new DRACOLoader();
-        dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.1/');
-        gltfLoader.setDRACOLoader(dracoLoader);
+        if (typeof THREE.DRACOLoader !== 'undefined') {
+            const dracoLoader = new THREE.DRACOLoader();
+            dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.1/');
+            gltfLoader.setDRACOLoader(dracoLoader);
+        }
+
+        function removeHotspotFromDOM() {
+            if (hotspotObject) {
+                if (hotspotObject.element && hotspotObject.element.parentNode) {
+                    hotspotObject.element.parentNode.removeChild(hotspotObject.element);
+                }
+                if (hotspotObject.parent) {
+                    hotspotObject.parent.remove(hotspotObject);
+                }
+                hotspotObject = null;
+            }
+        }
 
         function loadGLBFile(file) {
             if (!file) return;
@@ -803,7 +831,7 @@
 
             gltfLoader.load(url, (gltf) => {
                 if (currentModel) {
-                    if (hotspotObject) currentModel.remove(hotspotObject);
+                    removeHotspotFromDOM();
                     scene.remove(currentModel);
                 }
                 clearRuler();
@@ -846,6 +874,19 @@
                 let triangles = 0;
                 model.traverse((child) => {
                     if (child.isMesh) {
+                        // Клонируем материал для независимой работы сечений и предотвращаем черные металлы без envMap
+                        if (child.material) {
+                            if (Array.isArray(child.material)) {
+                                child.material = child.material.map(m => {
+                                    const cloned = m.clone();
+                                    if (cloned.metalness > 0.6 && !scene.environment) cloned.metalness = 0.45;
+                                    return cloned;
+                                });
+                            } else {
+                                child.material = child.material.clone();
+                                if (child.material.metalness > 0.6 && !scene.environment) child.material.metalness = 0.45;
+                            }
+                        }
                         modelMeshes.push(child);
                         if (child.geometry && child.geometry.index) {
                             triangles += child.geometry.index.count / 3;
@@ -888,15 +929,15 @@
 
         function fitCameraToModel(instant = false) {
             if (!currentModel) return;
-            const dist = modelRadius * 2.6;
+            const dist = modelRadius * 2.4;
             const targetPos = {
                 x: modelCenter.x + dist * 0.75,
                 y: modelCenter.y + dist * 0.55,
                 z: modelCenter.z + dist * 0.75
             };
 
-            controls.minDistance = modelRadius * 0.4;
-            controls.maxDistance = modelRadius * 8.0;
+            controls.minDistance = modelRadius * 0.05;
+            controls.maxDistance = modelRadius * 10.0;
 
             if (instant) {
                 camera.position.set(targetPos.x, targetPos.y, targetPos.z);
@@ -908,7 +949,7 @@
             }
         }
 
-        document.getElementById('glb-input').addEventListener('change', (e) => {
+        glbInput.addEventListener('change', (e) => {
             if (e.target.files[0]) loadGLBFile(e.target.files[0]);
             e.target.value = '';
         });
@@ -916,15 +957,13 @@
         // --- 8. Загрузка .DOCX и сборка 3D-аннотации на объекте ---
         function attachHotspotToModel(divElement) {
             if (!currentModel) return;
-            if (hotspotObject && hotspotObject.parent) {
-                hotspotObject.parent.remove(hotspotObject);
-            }
+            removeHotspotFromDOM();
+
             currentModel.updateMatrixWorld(true);
-            const box = new THREE.Box3().setFromObject(currentModel);
             const topWorld = new THREE.Vector3(
-                (box.min.x + box.max.x) / 2,
-                box.max.y + 0.12,
-                (box.min.z + box.max.z) / 2
+                (normalizedBounds.min.x + normalizedBounds.max.x) / 2,
+                normalizedBounds.max.y + 0.12,
+                (normalizedBounds.min.z + normalizedBounds.max.z) / 2
             );
             const topLocal = currentModel.worldToLocal(topWorld.clone());
 
@@ -994,7 +1033,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        document.getElementById('docx-input').addEventListener('change', (e) => {
+        docxInput.addEventListener('change', (e) => {
             if (e.target.files[0]) loadDOCXFile(e.target.files[0]);
             e.target.value = '';
         });
@@ -1050,7 +1089,7 @@
             openPanel();
         }
 
-        document.getElementById('drawing-input').addEventListener('change', (e) => {
+        drawingInput.addEventListener('change', (e) => {
             if (e.target.files[0]) loadDrawingFile(e.target.files[0]);
             e.target.value = '';
         });
@@ -1059,7 +1098,7 @@
             document.getElementById('drawing-modal').classList.remove('visible');
         });
 
-        // Глобальный Drag & Drop для всех типов поддерживаемых файлов
+        // Глобальный Drag & Drop
         const dropZone = document.getElementById('drop-zone');
         window.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -1080,7 +1119,6 @@
             });
         });
 
-        // Горячая клавиша Escape
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 document.getElementById('drawing-modal').classList.remove('visible');
@@ -1159,7 +1197,7 @@
 
             if (isTourActive && currentModel) {
                 tourAngle += delta * 0.45;
-                const dist = modelRadius * 2.6;
+                const dist = modelRadius * 2.4;
                 camera.position.x = modelCenter.x + Math.sin(tourAngle) * dist;
                 camera.position.z = modelCenter.z + Math.cos(tourAngle) * dist;
                 camera.position.y = modelCenter.y + modelRadius * 0.9 + Math.sin(tourAngle * 2) * (modelRadius * 0.25);
