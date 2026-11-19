@@ -2,56 +2,31 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>3D Studio Viewer — Three.js PBR</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>3D Просмотр аудитории</title>
 
-  <!-- =========================================================================
-       ВНЕШНИЕ БИБЛИОТЕКИ (Three.js r132 / 0.132.2 + GSAP)
-       Подключены строго с одного CDN (cdn.jsdelivr.net) без ES-модулей.
-       Для 100% автономной работы на GitHub Pages без интернета:
-       1) Скачайте эти 11 JS-файлов в папку ./libs/ рядом с index.html
-       2) Скачайте draco_decoder.js, draco_decoder.wasm и draco_wasm_wrapper.js
-          в папку ./libs/draco/gltf/
-       3) Замените пути ниже на ./libs/... и DRACO_DECODER_PATH на './libs/draco/gltf/'
-       ========================================================================= -->
+  <!-- Three.js r132 (0.132.2) + GSAP — строго с одного CDN, без ES-модулей -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/TransformControls.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/DRACOLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/OBJLoader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/STLLoader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/libs/fflate.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/FBXLoader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/exporters/GLTFExporter.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 
   <style>
     :root {
-      --bg-app: #0f1218;
-      --bg-panel: #151a23;
-      --bg-card: #1b222e;
-      --bg-input: #11161f;
-      --bg-hover: #242d3d;
-      --border: rgba(255, 255, 255, 0.09);
-      --border-strong: rgba(255, 255, 255, 0.16);
-      --text-main: #edf2f7;
+      --glass-bg: rgba(18, 22, 30, 0.72);
+      --glass-bg-strong: rgba(18, 22, 30, 0.86);
+      --glass-hover: rgba(255, 255, 255, 0.1);
+      --border: rgba(255, 255, 255, 0.12);
+      --border-strong: rgba(255, 255, 255, 0.22);
+      --text-main: #f1f5f9;
       --text-muted: #94a3b8;
-      --text-dim: #64748b;
       --accent: #3b82f6;
-      --accent-hover: #2563eb;
-      --accent-soft: rgba(59, 130, 246, 0.16);
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-      --danger-soft: rgba(239, 68, 68, 0.15);
-      --radius: 8px;
-      --radius-sm: 6px;
-      --sidebar-w: 332px;
-      --topbar-h: 48px;
-      --shadow-ui: 0 10px 30px rgba(0, 0, 0, 0.45);
-      --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      --font-mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+      --accent-soft: rgba(59, 130, 246, 0.22);
+      --shadow-ui: 0 12px 32px rgba(0, 0, 0, 0.38);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
     }
 
     *, *::before, *::after {
@@ -62,15 +37,18 @@
 
     html, body {
       width: 100%;
-      height: 100%;
+      height: 100vh;
+      height: 100dvh;
       overflow: hidden;
-      background: var(--bg-app);
+      background: #141820;
       color: var(--text-main);
       font-family: var(--font-sans);
       font-size: 13px;
-      line-height: 1.4;
+      line-height: 1.35;
       -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
       user-select: none;
+      overscroll-behavior: none;
     }
 
     button, input {
@@ -79,139 +57,78 @@
       color: inherit;
     }
 
-    /* Custom Scrollbars */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.14); border-radius: 99px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+    #viewport {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      touch-action: none;
+      overflow: hidden;
+    }
 
-    /* App Layout */
-    .app-shell {
+    #viewport canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+      outline: none;
+    }
+
+    /* ==================== ВЕРХНИЙ ЛЕВЫЙ HUD ==================== */
+    .hud-top-left {
+      position: fixed;
+      top: max(12px, env(safe-area-inset-top));
+      left: max(12px, env(safe-area-inset-left));
+      right: max(12px, env(safe-area-inset-right));
+      z-index: 20;
       display: flex;
       flex-direction: column;
-      width: 100%;
-      height: 100%;
+      align-items: flex-start;
+      gap: 8px;
+      pointer-events: none;
     }
 
-    /* Top Bar */
-    .topbar {
-      height: var(--topbar-h);
-      background: var(--bg-panel);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 12px;
-      gap: 10px;
-      flex-shrink: 0;
-      z-index: 20;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      font-weight: 600;
-      font-size: 13.5px;
-      letter-spacing: 0.01em;
-      white-space: nowrap;
-    }
-
-    .brand-icon {
-      width: 28px;
-      height: 28px;
-      border-radius: 7px;
-      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-      display: grid;
-      place-items: center;
-      color: #fff;
-      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
-    }
-
-    .brand-badge {
-      font-family: var(--font-mono);
-      font-size: 10.5px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: rgba(255, 255, 255, 0.06);
-      color: var(--text-muted);
-      border: 1px solid var(--border);
-    }
-
-    .topbar-actions {
-      display: flex;
+    .chip-bar {
+      display: inline-flex;
       align-items: center;
       gap: 6px;
-      overflow-x: auto;
+      pointer-events: auto;
+      flex-wrap: wrap;
     }
 
-    /* Buttons */
-    .btn {
+    .chip-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
-      height: 30px;
-      padding: 0 10px;
-      border-radius: var(--radius-sm);
+      height: 36px;
+      padding: 0 12px;
+      border-radius: 10px;
       border: 1px solid var(--border);
-      background: var(--bg-card);
+      background: var(--glass-bg);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       color: var(--text-main);
+      font-weight: 500;
+      font-size: 13px;
       cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.14s, border-color 0.14s, color 0.14s, opacity 0.14s;
+      box-shadow: var(--shadow-ui);
+      transition: background 0.16s ease, border-color 0.16s ease, transform 0.12s ease;
     }
 
-    .btn:hover:not(:disabled) {
-      background: var(--bg-hover);
+    .chip-btn:hover {
+      background: var(--glass-bg-strong);
       border-color: var(--border-strong);
     }
 
-    .btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
+    .chip-btn:active {
+      transform: scale(0.97);
     }
 
-    .btn-primary {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
-      font-weight: 500;
-    }
-
-    .btn-primary:hover:not(:disabled) {
-      background: var(--accent-hover);
-      border-color: var(--accent-hover);
-    }
-
-    .btn-danger:hover:not(:disabled) {
-      background: var(--danger-soft);
-      border-color: rgba(239, 68, 68, 0.45);
-      color: #fca5a5;
-    }
-
-    .btn-active {
-      background: var(--accent-soft);
-      border-color: var(--accent);
-      color: #93c5fd;
-    }
-
-    .btn-icon {
-      width: 30px;
-      padding: 0;
-    }
-
-    .btn-sm {
-      height: 26px;
-      padding: 0 8px;
-      font-size: 12px;
-    }
-
-    .btn-xs {
-      height: 22px;
-      padding: 0 6px;
-      font-size: 11px;
-      border-radius: 4px;
+    .chip-btn.active {
+      background: rgba(30, 58, 138, 0.72);
+      border-color: rgba(96, 165, 250, 0.65);
+      color: #ffffff;
     }
 
     .ico {
@@ -219,346 +136,143 @@
       height: 15px;
       stroke: currentColor;
       fill: none;
-      stroke-width: 1.85;
+      stroke-width: 1.9;
       stroke-linecap: round;
       stroke-linejoin: round;
       flex-shrink: 0;
     }
 
-    .btn-xs .ico { width: 13px; height: 13px; }
-
-    .divider-v {
-      width: 1px;
-      height: 20px;
-      background: var(--border);
-      margin: 0 2px;
-      flex-shrink: 0;
-    }
-
-    /* Workspace */
-    .workspace {
-      flex: 1;
-      display: flex;
-      min-height: 0;
-      position: relative;
-    }
-
-    .viewport-wrap {
-      flex: 1;
-      position: relative;
-      min-width: 0;
-      min-height: 0;
-      background: #141821;
-      overflow: hidden;
-    }
-
-    #canvas-container {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-
-    #canvas-container canvas {
-      display: block;
-      width: 100% !important;
-      height: 100% !important;
-      outline: none;
-    }
-
-    /* Viewport Floating HUDs */
-    .hud-views {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 4px;
-      background: rgba(21, 26, 35, 0.86);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-ui);
-      z-index: 10;
-      flex-wrap: wrap;
-    }
-
-    .hud-views .btn {
-      height: 26px;
-      padding: 0 8px;
-      font-size: 11.5px;
-      background: transparent;
-      border-color: transparent;
-    }
-
-    .hud-views .btn:hover {
-      background: var(--bg-hover);
-      border-color: var(--border);
-    }
-
-    .kbd-hint {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--text-dim);
-      margin-left: 2px;
-    }
-
-    .hud-dock {
-      position: absolute;
-      bottom: 14px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      padding: 5px 7px;
-      background: rgba(21, 26, 35, 0.88);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--border-strong);
-      border-radius: 10px;
-      box-shadow: var(--shadow-ui);
-      z-index: 10;
-      max-width: calc(100% - 24px);
-      overflow-x: auto;
-    }
-
-    .hud-status {
-      position: absolute;
-      bottom: 14px;
-      left: 12px;
-      padding: 5px 9px;
-      background: rgba(15, 18, 24, 0.72);
-      backdrop-filter: blur(6px);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--text-muted);
-      pointer-events: none;
-      z-index: 9;
-    }
-
-    /* Empty State Overlay */
-    .empty-overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-      z-index: 5;
-      padding: 20px;
-    }
-
-    .empty-overlay.hidden { display: none; }
-
-    .empty-card {
-      pointer-events: auto;
-      max-width: 410px;
-      text-align: center;
-      background: rgba(21, 26, 35, 0.86);
-      backdrop-filter: blur(12px);
-      border: 1px dashed var(--border-strong);
-      border-radius: 14px;
-      padding: 26px 24px;
-      box-shadow: var(--shadow-ui);
-    }
-
-    .empty-card-icon {
-      width: 46px;
-      height: 46px;
-      margin: 0 auto 12px;
-      border-radius: 12px;
-      background: var(--accent-soft);
-      color: #60a5fa;
-      display: grid;
-      place-items: center;
-    }
-
-    .empty-card h2 {
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 6px;
-    }
-
-    .empty-card p {
-      color: var(--text-muted);
-      font-size: 12.5px;
-      margin-bottom: 16px;
-    }
-
-    .empty-actions {
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    /* Drag & Drop Overlay */
-    .drop-banner {
-      position: absolute;
-      inset: 10px;
-      border-radius: 12px;
-      border: 2px dashed var(--accent);
-      background: rgba(15, 23, 42, 0.82);
-      backdrop-filter: blur(6px);
+    /* ==================== ВЫПАДАЮЩИЕ ПАНЕЛИ ==================== */
+    .dropdown-panel {
       display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 40;
-      pointer-events: none;
-    }
-
-    .drop-banner.active { display: flex; }
-
-    .drop-banner-box {
-      padding: 18px 28px;
-      border-radius: 10px;
-      background: var(--bg-panel);
-      border: 1px solid var(--accent);
-      font-size: 15px;
-      font-weight: 600;
-      color: #93c5fd;
-    }
-
-    /* Right Sidebar */
-    .sidebar {
-      width: var(--sidebar-w);
-      background: var(--bg-panel);
-      border-left: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      flex-shrink: 0;
-      z-index: 15;
-      transition: width 0.2s ease, opacity 0.2s ease;
-    }
-
-    .sidebar.collapsed {
-      width: 0;
-      border-left: none;
-      overflow: hidden;
-      opacity: 0;
-    }
-
-    .tabs {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      border-bottom: 1px solid var(--border);
-      background: rgba(0, 0, 0, 0.16);
-      flex-shrink: 0;
-    }
-
-    .tab-btn {
-      height: 36px;
-      border: none;
-      background: transparent;
-      color: var(--text-muted);
-      font-size: 12px;
-      font-weight: 500;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      transition: color 0.14s, background 0.14s, border-color 0.14s;
-    }
-
-    .tab-btn:hover {
-      color: var(--text-main);
-      background: rgba(255, 255, 255, 0.03);
-    }
-
-    .tab-btn.active {
-      color: #93c5fd;
-      border-bottom-color: var(--accent);
-      background: rgba(59, 130, 246, 0.07);
-    }
-
-    .tab-count {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      padding: 1px 5px;
-      border-radius: 99px;
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--text-muted);
-    }
-
-    .tab-pane {
-      display: none;
-      flex: 1;
+      width: 282px;
+      max-width: calc(100vw - 24px);
+      max-height: calc(100dvh - 76px);
       overflow-y: auto;
       padding: 12px;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .tab-pane.active {
-      display: flex;
-    }
-
-    /* Section Cards inside Sidebar */
-    .section-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 10px 11px;
-      display: flex;
-      flex-direction: column;
-      gap: 9px;
+      border: 1px solid var(--border);
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: var(--shadow-ui);
+      pointer-events: auto;
+      animation: panelIn 0.16s ease;
     }
 
-    .section-title {
+    .dropdown-panel.open {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    @keyframes panelIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .dropdown-panel::-webkit-scrollbar { width: 5px; }
+    .dropdown-panel::-webkit-scrollbar-track { background: transparent; }
+    .dropdown-panel::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18); border-radius: 99px; }
+
+    .panel-title {
       font-size: 11px;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
       color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      padding: 0 2px;
     }
 
-    .row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .checkbox-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      font-size: 12px;
-      color: var(--text-main);
-    }
-
-    .checkbox-row input[type="checkbox"] {
-      accent-color: var(--accent);
-      width: 14px;
-      height: 14px;
-      cursor: pointer;
-    }
-
-    /* Range Sliders */
-    .slider-group {
+    /* ==================== СПИСОК РАКУРСОВ ==================== */
+    .preset-list {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 5px;
     }
 
-    .slider-label {
+    .preset-btn {
+      width: 100%;
       display: flex;
+      align-items: center;
       justify-content: space-between;
-      font-size: 12px;
+      gap: 8px;
+      padding: 9px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .preset-btn:hover {
+      background: var(--glass-hover);
+      border-color: var(--border);
+    }
+
+    .preset-btn.active {
+      background: var(--accent-soft);
+      border-color: rgba(96, 165, 250, 0.55);
+      color: #ffffff;
+    }
+
+    .preset-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+    }
+
+    .preset-name {
+      font-weight: 500;
+      font-size: 13px;
+    }
+
+    .preset-sub {
+      font-size: 11px;
       color: var(--text-muted);
     }
 
-    .slider-val {
+    .preset-btn.active .preset-sub {
+      color: #bfdbfe;
+    }
+
+    .preset-idx {
       font-family: var(--font-mono);
-      color: var(--text-main);
+      font-size: 10.5px;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.07);
+      padding: 2px 6px;
+      border-radius: 5px;
+      flex-shrink: 0;
+    }
+
+    .preset-btn.active .preset-idx {
+      background: rgba(59, 130, 246, 0.35);
+      color: #dbeafe;
+    }
+
+    /* ==================== НАСТРОЙКИ РЕНДЕРА ==================== */
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .control-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+
+    .control-val {
+      font-family: var(--font-mono);
       font-size: 11.5px;
+      color: var(--text-main);
     }
 
     input[type="range"] {
@@ -567,8 +281,7 @@
       width: 100%;
       height: 5px;
       border-radius: 99px;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.14);
       outline: none;
       cursor: pointer;
     }
@@ -576,1001 +289,449 @@
     input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
-      width: 14px;
-      height: 14px;
+      width: 15px;
+      height: 15px;
       border-radius: 50%;
       background: var(--accent);
-      border: 2px solid #fff;
+      border: 2px solid #ffffff;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.45);
       cursor: pointer;
     }
 
-    /* Segmented Control */
+    input[type="range"]::-moz-range-thumb {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid #ffffff;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.45);
+      cursor: pointer;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 2px 0;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12.5px;
+      color: var(--text-main);
+    }
+
+    .switch-btn {
+      position: relative;
+      width: 40px;
+      height: 22px;
+      border-radius: 99px;
+      border: 1px solid var(--border-strong);
+      background: rgba(255, 255, 255, 0.14);
+      cursor: pointer;
+      transition: background 0.16s, border-color 0.16s;
+      flex-shrink: 0;
+    }
+
+    .switch-btn::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #ffffff;
+      transition: transform 0.16s ease;
+    }
+
+    .switch-btn.on {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .switch-btn.on::after {
+      transform: translateX(18px);
+    }
+
     .segmented {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 3px;
-      background: var(--bg-input);
       padding: 3px;
       border-radius: var(--radius-sm);
+      background: rgba(0, 0, 0, 0.28);
       border: 1px solid var(--border);
     }
 
     .seg-btn {
-      height: 26px;
+      height: 27px;
       border: none;
-      border-radius: 4px;
+      border-radius: 6px;
       background: transparent;
       color: var(--text-muted);
       font-size: 11.5px;
+      font-weight: 500;
       cursor: pointer;
-      transition: all 0.14s;
+      transition: background 0.14s, color 0.14s;
     }
 
-    .seg-btn:hover { color: var(--text-main); }
+    .seg-btn:hover {
+      color: var(--text-main);
+    }
+
     .seg-btn.active {
       background: var(--accent);
-      color: #fff;
-      font-weight: 500;
+      color: #ffffff;
     }
 
-    /* Outliner Tree */
-    .outliner-list {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .model-item {
-      border: 1px solid var(--border);
-      background: var(--bg-input);
-      border-radius: var(--radius-sm);
-      overflow: hidden;
-      transition: border-color 0.14s;
-    }
-
-    .model-item.selected {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.35);
-    }
-
-    .model-header {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      padding: 6px 7px;
-      cursor: pointer;
-    }
-
-    .model-header:hover {
-      background: rgba(255, 255, 255, 0.03);
-    }
-
-    .model-item.selected > .model-header {
-      background: var(--accent-soft);
-    }
-
-    .expand-btn {
-      width: 18px;
-      height: 18px;
-      border: none;
-      background: transparent;
-      color: var(--text-muted);
-      cursor: pointer;
-      display: grid;
-      place-items: center;
-      border-radius: 4px;
-      flex-shrink: 0;
-    }
-
-    .expand-btn:hover { background: rgba(255, 255, 255, 0.08); color: var(--text-main); }
-    .expand-btn svg { transition: transform 0.15s; }
-    .expand-btn.open svg { transform: rotate(90deg); }
-
-    .model-name {
-      flex: 1;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-weight: 500;
-      font-size: 12.5px;
-    }
-
-    .model-meta {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--text-dim);
-      padding: 1px 4px;
-      border-radius: 4px;
-      background: rgba(255, 255, 255, 0.04);
-      flex-shrink: 0;
-    }
-
-    .model-actions {
-      display: flex;
-      align-items: center;
-      gap: 3px;
-      padding: 5px 7px;
-      border-top: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.015);
-      flex-wrap: wrap;
-    }
-
-    .model-children {
-      display: none;
-      border-top: 1px solid var(--border);
-      max-height: 185px;
-      overflow-y: auto;
-      background: rgba(0, 0, 0, 0.16);
-      padding: 4px;
-    }
-
-    .model-children.open {
-      display: block;
-    }
-
-    .submesh-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 6px 4px 18px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 11.5px;
-      color: var(--text-muted);
-    }
-
-    .submesh-row:hover {
-      background: rgba(255, 255, 255, 0.05);
-      color: var(--text-main);
-    }
-
-    .submesh-row.active {
-      background: var(--accent-soft);
-      color: #93c5fd;
-    }
-
-    .submesh-name {
-      flex: 1;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .muted-empty {
-      text-align: center;
-      padding: 18px 10px;
-      color: var(--text-dim);
-      font-size: 12px;
-      border: 1px dashed var(--border);
-      border-radius: var(--radius-sm);
-    }
-
-    /* Transform Readout */
-    .transform-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 5px;
-      font-family: var(--font-mono);
-      font-size: 11px;
-    }
-
-    .coord-box {
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 4px 6px;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .coord-x { color: #f87171; }
-    .coord-y { color: #4ade80; }
-    .coord-z { color: #60a5fa; }
-
-    /* Bookmarks */
-    .bookmark-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 8px;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      transition: border-color 0.14s, background 0.14s;
-    }
-
-    .bookmark-item:hover {
-      border-color: var(--accent);
-      background: var(--bg-hover);
-    }
-
-    .bookmark-label {
-      flex: 1;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-size: 12.5px;
-    }
-
-    .text-input {
-      flex: 1;
-      min-width: 0;
-      height: 30px;
-      padding: 0 9px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      background: var(--bg-input);
-      color: var(--text-main);
-      outline: none;
-    }
-
-    .text-input:focus {
-      border-color: var(--accent);
-    }
-
-    /* Blueprints */
-    .bp-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-    }
-
-    .bp-card {
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .bp-thumb {
-      height: 92px;
-      background: #0b0e14;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .bp-thumb img {
+    .action-btn {
       width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.2s;
-    }
-
-    .bp-thumb:hover img {
-      transform: scale(1.05);
-    }
-
-    .bp-pdf-badge {
-      font-family: var(--font-mono);
+      height: 32px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-main);
       font-size: 12px;
-      font-weight: 600;
-      color: #f87171;
-      border: 1px solid rgba(248, 113, 113, 0.4);
-      padding: 4px 8px;
-      border-radius: 5px;
-    }
-
-    .bp-foot {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 5px 6px;
-      border-top: 1px solid var(--border);
-    }
-
-    .bp-name {
-      flex: 1;
-      min-width: 0;
-      font-size: 11px;
-      color: var(--text-muted);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    /* Lightbox Modal for Blueprints & Shortcuts */
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(5, 8, 14, 0.82);
-      backdrop-filter: blur(6px);
-      display: none;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      z-index: 100;
-      padding: 20px;
+      gap: 6px;
+      transition: background 0.15s, border-color 0.15s;
     }
 
-    .modal-backdrop.open {
+    .action-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: var(--border-strong);
+    }
+
+    /* ==================== ИНДИКАТОР ЗАГРУЗКИ ==================== */
+    .loader-overlay {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 30;
       display: flex;
-    }
-
-    .modal-box {
-      background: var(--bg-panel);
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 99px;
       border: 1px solid var(--border-strong);
-      border-radius: 12px;
+      background: var(--glass-bg-strong);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       box-shadow: var(--shadow-ui);
-      max-width: 92vw;
-      max-height: 90vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
+      font-size: 13px;
+      color: var(--text-main);
+      max-width: calc(100vw - 32px);
+      transition: opacity 0.25s ease;
     }
 
-    .modal-header {
-      padding: 10px 14px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .modal-body {
-      padding: 14px;
-      overflow: auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #0a0d12;
-      min-width: min(680px, 85vw);
-      min-height: 360px;
-      max-height: 76vh;
-    }
-
-    .modal-body img {
-      max-width: 100%;
-      max-height: 70vh;
-      transform-origin: center;
-      transition: transform 0.15s;
-    }
-
-    .modal-body iframe {
-      width: min(820px, 84vw);
-      height: 70vh;
-      border: none;
-      background: #fff;
-      border-radius: 4px;
-    }
-
-    .shortcuts-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12.5px;
-    }
-
-    .shortcuts-table td {
-      padding: 6px 10px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .shortcuts-table td:first-child {
-      font-family: var(--font-mono);
-      color: #93c5fd;
-      white-space: nowrap;
-      width: 145px;
-    }
-
-    /* Toasts */
-    .toast-stack {
-      position: fixed;
-      top: 58px;
-      right: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      z-index: 90;
+    .loader-overlay.hidden {
+      opacity: 0;
       pointer-events: none;
     }
 
-    .toast {
-      background: rgba(20, 25, 35, 0.94);
-      border: 1px solid var(--border-strong);
-      border-left: 3px solid var(--accent);
-      color: var(--text-main);
-      padding: 8px 12px;
-      border-radius: 7px;
-      font-size: 12.5px;
-      box-shadow: var(--shadow-ui);
-      animation: toastIn 0.18s ease;
-      max-width: 320px;
+    .loader-overlay.error {
+      border-radius: var(--radius);
+      border-color: rgba(239, 68, 68, 0.55);
+      color: #fecaca;
+      padding: 14px 16px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+      max-width: 340px;
     }
-
-    .toast.success { border-left-color: var(--success); }
-    .toast.warn { border-left-color: var(--warning); }
-    .toast.error { border-left-color: var(--danger); }
-
-    @keyframes toastIn {
-      from { opacity: 0; transform: translateY(-6px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Loading indicator */
-    .loader-pill {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      background: rgba(20, 25, 35, 0.9);
-      border: 1px solid var(--accent);
-      color: #93c5fd;
-      padding: 6px 12px;
-      border-radius: 99px;
-      font-size: 12px;
-      display: none;
-      align-items: center;
-      gap: 8px;
-      z-index: 25;
-    }
-
-    .loader-pill.active { display: inline-flex; }
 
     .spinner {
-      width: 13px;
-      height: 13px;
-      border: 2px solid rgba(147, 197, 253, 0.25);
-      border-top-color: #93c5fd;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #60a5fa;
       border-radius: 50%;
-      animation: spin 0.7s linear infinite;
+      animation: spin 0.75s linear infinite;
+      flex-shrink: 0;
     }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
 
-    @media (max-width: 820px) {
-      :root { --sidebar-w: 296px; }
-      .brand-badge { display: none; }
-      .hud-status { display: none; }
-      .sidebar {
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        box-shadow: var(--shadow-ui);
+    /* ==================== АДАПТИВ ДЛЯ СМАРТФОНОВ ==================== */
+    @media (max-width: 520px) {
+      .chip-btn {
+        height: 34px;
+        padding: 0 10px;
+        font-size: 12.5px;
+      }
+
+      #btn-snapshot .chip-label {
+        display: none;
+      }
+
+      #btn-snapshot {
+        width: 36px;
+        padding: 0;
+      }
+
+      .dropdown-panel {
+        width: min(296px, calc(100vw - 24px));
       }
     }
   </style>
 </head>
 <body>
-  <div class="app-shell">
-    <!-- ================= TOP BAR ================= -->
-    <header class="topbar">
-      <div class="brand">
-        <div class="brand-icon" aria-hidden="true">
-          <svg class="ico" viewBox="0 0 24 24">
-            <path d="M12 2 3 7v10l9 5 9-5V7l-9-5z"/>
-            <path d="M3 7l9 5 9-5"/>
-            <path d="M12 12v10"/>
-          </svg>
-        </div>
-        <span>3D Studio Viewer</span>
-        <span class="brand-badge">PBR · r132</span>
-      </div>
+  <div id="viewport"></div>
 
-      <div class="topbar-actions">
-        <input id="model-file-input" type="file" multiple accept=".glb,.gltf,.obj,.stl,.fbx,.bin,.mtl,.png,.jpg,.jpeg,.webp" hidden />
-        <button id="btn-upload" class="btn btn-primary" title="Добавить одну или несколько 3D-моделей">
-          <svg class="ico" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          <span>Загрузить 3D</span>
-        </button>
+  <!-- Компактные ярлыки слева сверху -->
+  <div class="hud-top-left">
+    <div class="chip-bar" role="toolbar" aria-label="Панель управления просмотром">
+      <button id="btn-tab-views" class="chip-btn" type="button" aria-expanded="false" aria-controls="panel-views">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M23 7l-7 5 7 5V7z"/>
+          <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+        </svg>
+        <span>Ракурсы</span>
+      </button>
 
-        <button id="btn-demo" class="btn" title="Создать локальную демо-сборку для проверки света и инструментов">
-          <svg class="ico" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-          <span>Демо</span>
-        </button>
+      <button id="btn-tab-render" class="chip-btn" type="button" aria-expanded="false" aria-controls="panel-render">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"/>
+          <line x1="12" y1="2" x2="12" y2="5"/>
+          <line x1="12" y1="19" x2="12" y2="22"/>
+          <line x1="4.93" y1="4.93" x2="7.05" y2="7.05"/>
+          <line x1="16.95" y1="16.95" x2="19.07" y2="19.07"/>
+          <line x1="2" y1="12" x2="5" y2="12"/>
+          <line x1="19" y1="12" x2="22" y2="12"/>
+          <line x1="4.93" y1="19.07" x2="7.05" y2="16.95"/>
+          <line x1="16.95" y1="7.05" x2="19.07" y2="4.93"/>
+        </svg>
+        <span>Рендер</span>
+      </button>
 
-        <div class="divider-v"></div>
-
-        <button id="btn-screenshot" class="btn" title="Сохранить чистый снимок 3D-сцены в PNG">
-          <svg class="ico" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          <span>Снимок PNG</span>
-        </button>
-
-        <button id="btn-export-glb" class="btn" title="Экспортировать все видимые модели сцены одним файлом .GLB">
-          <svg class="ico" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span>Экспорт .GLB</span>
-        </button>
-
-        <button id="btn-reset-all" class="btn btn-danger" title="Сбросить камеру, свет, X-Ray, взрыв-схему и автотур">
-          <svg class="ico" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-          <span>Сбросить всё</span>
-        </button>
-
-        <div class="divider-v"></div>
-
-        <button id="btn-help" class="btn btn-icon" title="Горячие клавиши и управление">
-          <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        </button>
-
-        <button id="btn-toggle-sidebar" class="btn btn-icon btn-active" title="Показать/скрыть правую панель">
-          <svg class="ico" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
-        </button>
-      </div>
-    </header>
-
-    <!-- ================= WORKSPACE ================= -->
-    <div class="workspace">
-      <main class="viewport-wrap" id="viewport-wrap">
-        <div id="canvas-container"></div>
-
-        <!-- Quick Camera Views HUD -->
-        <div class="hud-views" role="toolbar" aria-label="Быстрые виды камеры">
-          <button class="btn" data-view="iso" title="Изометрия (1)">Изо<span class="kbd-hint">1</span></button>
-          <button class="btn" data-view="front" title="Спереди (2)">Спереди<span class="kbd-hint">2</span></button>
-          <button class="btn" data-view="back" title="Сзади (3)">Сзади<span class="kbd-hint">3</span></button>
-          <button class="btn" data-view="left" title="Слева (4)">Слева<span class="kbd-hint">4</span></button>
-          <button class="btn" data-view="right" title="Справа (5)">Справа<span class="kbd-hint">5</span></button>
-          <button class="btn" data-view="top" title="Сверху (6)">Сверху<span class="kbd-hint">6</span></button>
-          <div class="divider-v"></div>
-          <button id="btn-focus" class="btn" title="Фокус на выделенном (F)">
-            <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg>
-          </button>
-          <button id="btn-home" class="btn" title="Показать всю сцену (Home)">
-            <svg class="ico" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          </button>
-        </div>
-
-        <!-- Loader Indicator -->
-        <div id="loader-pill" class="loader-pill">
-          <div class="spinner"></div>
-          <span id="loader-text">Загрузка...</span>
-        </div>
-
-        <!-- Bottom Tools Dock -->
-        <div class="hud-dock" role="toolbar" aria-label="Инструменты сцены">
-          <button id="btn-gizmo-translate" class="btn btn-active" title="Перемещение (G / T). Удерживайте Shift для привязки">
-            <svg class="ico" viewBox="0 0 24 24"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
-            <span>G</span>
-          </button>
-          <button id="btn-gizmo-rotate" class="btn" title="Вращение (R). Удерживайте Shift для шага 15°">
-            <svg class="ico" viewBox="0 0 24 24"><path d="M21.5 2v6h-6"/><path d="M21.34 15.57a10 10 0 1 1-.57-8.38"/></svg>
-            <span>R</span>
-          </button>
-          <button id="btn-gizmo-scale" class="btn" title="Масштаб (S). Удерживайте Shift для привязки">
-            <svg class="ico" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
-            <span>S</span>
-          </button>
-          <button id="btn-undo" class="btn" disabled title="Отменить трансформацию (Ctrl+Z)">
-            <svg class="ico" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
-          </button>
-
-          <div class="divider-v"></div>
-
-          <button id="btn-wireframe" class="btn" title="Режим сетки полигонов (Wireframe)">
-            <svg class="ico" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><line x1="2" y1="7" x2="2" y2="17"/><line x1="22" y1="7" x2="22" y2="17"/><line x1="12" y1="12" x2="12" y2="22"/><polyline points="2 17 12 22 22 17"/></svg>
-            <span>Сетка</span>
-          </button>
-
-          <button id="btn-xray" class="btn" title="Режим «Рентген» (полупрозрачность выделенного или всей сцены)">
-            <svg class="ico" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            <span>Рентген</span>
-          </button>
-
-          <button id="btn-autotour" class="btn" title="Автотур 360° вокруг сцены">
-            <svg class="ico" viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-            <span>360°</span>
-          </button>
-        </div>
-
-        <!-- Subtle Scene Status -->
-        <div class="hud-status" id="hud-status">
-          <div>Моделей: <strong id="stat-models">0</strong> · Мешей: <strong id="stat-meshes">0</strong></div>
-          <div>Двойной клик: фокус · Shift+Гизмо: шаг · ПКМ+WASD: полёт</div>
-        </div>
-
-        <!-- Empty Welcome Overlay -->
-        <div class="empty-overlay" id="empty-overlay">
-          <div class="empty-card">
-            <div class="empty-card-icon">
-              <svg class="ico" style="width:24px;height:24px" viewBox="0 0 24 24">
-                <path d="M12 2 3 7v10l9 5 9-5V7l-9-5z"/>
-                <path d="M3 7l9 5 9-5"/>
-                <path d="M12 12v10"/>
-              </svg>
-            </div>
-            <h2>Перетащите 3D-модели в окно</h2>
-            <p>Поддерживаются <strong>.GLB, .GLTF, .OBJ, .STL, .FBX</strong>. Можно загружать сразу несколько файлов — они обрабатываются локально в памяти браузера.</p>
-            <div class="empty-actions">
-              <button id="btn-empty-upload" class="btn btn-primary">Выбрать файлы</button>
-              <button id="btn-empty-demo" class="btn">Загрузить демо-сборку</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Drag & Drop Overlay -->
-        <div class="drop-banner" id="drop-banner">
-          <div class="drop-banner-box">Отпустите файлы для добавления в сцену (.glb, .gltf, .obj, .stl, .fbx)</div>
-        </div>
-      </main>
-
-      <!-- ================= RIGHT SIDEBAR ================= -->
-      <aside class="sidebar" id="sidebar">
-        <div class="tabs" role="tablist">
-          <button class="tab-btn active" data-tab="objects" role="tab">
-            <span>Объекты</span>
-            <span class="tab-count" id="count-objects">0</span>
-          </button>
-          <button class="tab-btn" data-tab="scene" role="tab">
-            <span>Свет</span>
-          </button>
-          <button class="tab-btn" data-tab="views" role="tab">
-            <span>Ракурсы</span>
-            <span class="tab-count" id="count-bookmarks">0</span>
-          </button>
-          <button class="tab-btn" data-tab="blueprints" role="tab">
-            <span>Чертежи</span>
-            <span class="tab-count" id="count-blueprints">0</span>
-          </button>
-        </div>
-
-        <!-- TAB 1: OUTLINER & MODELS -->
-        <div class="tab-pane active" id="tab-objects">
-          <div class="section-card">
-            <div class="section-title">
-              <span>Импорт и выделение</span>
-              <span id="selected-counter" style="color:#93c5fd">Выделено: 0</span>
-            </div>
-            <label class="checkbox-row" title="Отключает автовыравнивание на Y=0, сдвиг по X и нормализацию масштаба — удобно для многофайловых CAD-сборок">
-              <input type="checkbox" id="chk-preserve-coords" />
-              <span>Сохранять исходные координаты/масштаб</span>
-            </label>
-            <div class="row" style="flex-wrap:wrap">
-              <button id="btn-select-all" class="btn btn-sm" style="flex:1">Выделить все</button>
-              <button id="btn-deselect" class="btn btn-sm" style="flex:1">Снять (Esc)</button>
-            </div>
-            <div class="row" id="multi-actions-bar" style="display:none;flex-wrap:wrap">
-              <button id="btn-sel-floor" class="btn btn-sm" style="flex:1" title="Поставить выделенные на пол Y=0">На пол Y=0</button>
-              <button id="btn-sel-hide" class="btn btn-sm" style="flex:1" title="Скрыть/показать выделенные">Видимость</button>
-              <button id="btn-sel-reset" class="btn btn-sm" title="Сбросить трансформации выделенных">Сброс</button>
-            </div>
-          </div>
-
-          <div class="section-card" id="transform-info-card" style="display:none">
-            <div class="section-title">
-              <span>Трансформация выделенного</span>
-              <span id="gizmo-mode-label" style="color:#93c5fd">Перемещение</span>
-            </div>
-            <div class="transform-grid">
-              <div class="coord-box"><span class="coord-x">X</span><span id="val-tx">0.00</span></div>
-              <div class="coord-box"><span class="coord-y">Y</span><span id="val-ty">0.00</span></div>
-              <div class="coord-box"><span class="coord-z">Z</span><span id="val-tz">0.00</span></div>
-            </div>
-          </div>
-
-          <div class="section-card">
-            <div class="section-title">
-              <span>Взрыв-схема (Exploded View)</span>
-              <span class="slider-val" id="val-explode">0%</span>
-            </div>
-            <div class="slider-group">
-              <input type="range" id="slider-explode" min="0" max="100" step="1" value="0" />
-            </div>
-            <div style="font-size:11px;color:var(--text-dim)">
-              Раздвигает дочерние детали выделенной модели (или всех моделей) от общего центра.
-            </div>
-          </div>
-
-          <div class="section-card" style="flex:1;min-height:180px">
-            <div class="section-title">
-              <span>Дерево сцены (Outliner)</span>
-              <span style="font-size:10px;color:var(--text-dim)">Ctrl+клик — группа</span>
-            </div>
-            <div class="outliner-list" id="outliner-list">
-              <div class="muted-empty">Сцена пуста. Загрузите 3D-модель или откройте демо-сборку.</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- TAB 2: SCENE & LIGHTING -->
-        <div class="tab-pane" id="tab-scene">
-          <div class="section-card">
-            <div class="section-title"><span>Фон вьюпорта</span></div>
-            <div class="segmented" id="bg-mode-group">
-              <button class="seg-btn active" data-bg="dark">Тёмный</button>
-              <button class="seg-btn" data-bg="studio">Светлый</button>
-              <button class="seg-btn" data-bg="gradient">Градиент</button>
-            </div>
-          </div>
-
-          <div class="section-card">
-            <div class="section-title"><span>PBR-освещение и солнце</span></div>
-
-            <div class="slider-group">
-              <div class="slider-label">
-                <span>Экспозиция (яркость)</span>
-                <span class="slider-val" id="val-exposure">0.98</span>
-              </div>
-              <input type="range" id="slider-exposure" min="0.4" max="1.6" step="0.02" value="0.98" />
-            </div>
-
-            <div class="slider-group">
-              <div class="slider-label">
-                <span>Азимут солнца</span>
-                <span class="slider-val" id="val-azimuth">42°</span>
-              </div>
-              <input type="range" id="slider-azimuth" min="0" max="360" step="1" value="42" />
-            </div>
-
-            <div class="slider-group">
-              <div class="slider-label">
-                <span>Высота солнца</span>
-                <span class="slider-val" id="val-elevation">52°</span>
-              </div>
-              <input type="range" id="slider-elevation" min="12" max="86" step="1" value="52" />
-            </div>
-
-            <div class="slider-group">
-              <div class="slider-label">
-                <span>Насыщенность теней пола</span>
-                <span class="slider-val" id="val-shadow-opacity">0.25</span>
-              </div>
-              <input type="range" id="slider-shadow-opacity" min="0.05" max="0.6" step="0.01" value="0.25" />
-            </div>
-          </div>
-
-          <div class="section-card">
-            <div class="section-title"><span>Отображение</span></div>
-            <div class="row">
-              <button id="btn-toggle-shadows" class="btn btn-active" style="flex:1">
-                <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
-                <span>Тени: ВКЛ</span>
-              </button>
-              <button id="btn-toggle-grid" class="btn btn-active" style="flex:1">
-                <svg class="ico" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
-                <span>Сетка: ВКЛ</span>
-              </button>
-            </div>
-            <button id="btn-reset-lighting" class="btn btn-sm">Сбросить параметры света</button>
-          </div>
-        </div>
-
-        <!-- TAB 3: CAMERA BOOKMARKS -->
-        <div class="tab-pane" id="tab-views">
-          <div class="section-card">
-            <div class="section-title"><span>Закладки ракурсов</span></div>
-            <div class="row">
-              <input type="text" id="bookmark-name-input" class="text-input" placeholder="Название ракурса (опц.)" />
-              <button id="btn-save-bookmark" class="btn btn-primary">Сохранить</button>
-            </div>
-            <div class="outliner-list" id="bookmarks-list">
-              <div class="muted-empty">Нажмите «Сохранить», чтобы запомнить текущую позицию камеры.</div>
-            </div>
-          </div>
-
-          <div class="section-card">
-            <div class="section-title"><span>Стандартные CAD-виды</span></div>
-            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px">
-              <button class="btn btn-sm" data-view="iso">1 · Изометрия</button>
-              <button class="btn btn-sm" data-view="top">6 · Сверху</button>
-              <button class="btn btn-sm" data-view="front">2 · Спереди</button>
-              <button class="btn btn-sm" data-view="back">3 · Сзади</button>
-              <button class="btn btn-sm" data-view="left">4 · Слева</button>
-              <button class="btn btn-sm" data-view="right">5 · Справа</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- TAB 4: BLUEPRINTS -->
-        <div class="tab-pane" id="tab-blueprints">
-          <div class="section-card">
-            <div class="section-title"><span>Чертежи и референсы</span></div>
-            <input id="blueprint-file-input" type="file" multiple accept="image/*,.pdf" hidden />
-            <button id="btn-upload-blueprint" class="btn btn-primary">
-              <svg class="ico" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-              <span>Прикрепить чертёж (PNG/JPG/SVG/PDF)</span>
-            </button>
-            <div style="font-size:11px;color:var(--text-dim)">
-              Файлы хранятся только в памяти текущей вкладки браузера и не передаются в сеть.
-            </div>
-          </div>
-
-          <div id="blueprints-container">
-            <div class="muted-empty">Чертежи ещё не прикреплены.</div>
-          </div>
-        </div>
-      </aside>
+      <button id="btn-snapshot" class="chip-btn" type="button" title="Сохранить снимок PNG" aria-label="Снимок PNG">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+        <span class="chip-label">Снимок PNG</span>
+      </button>
     </div>
+
+    <!-- Выпадающая вкладка «Ракурсы» -->
+    <section id="panel-views" class="dropdown-panel" aria-label="Ракурсы камеры">
+      <div class="panel-title">Ракурсы аудитории</div>
+      <div id="preset-list" class="preset-list"></div>
+    </section>
+
+    <!-- Выпадающая вкладка «Рендер» -->
+    <section id="panel-render" class="dropdown-panel" aria-label="Настройки рендера и света">
+      <div class="panel-title">Освещение интерьера</div>
+
+      <div class="control-group">
+        <div class="control-label">
+          <span>Экспозиция</span>
+          <span id="val-exposure" class="control-val">0.95</span>
+        </div>
+        <input id="slider-exposure" type="range" min="0.50" max="1.60" step="0.02" value="0.95" />
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">
+          <span>Солнечный свет (из окон)</span>
+          <span id="val-sun-intensity" class="control-val">1.35</span>
+        </div>
+        <input id="slider-sun-intensity" type="range" min="0.00" max="3.00" step="0.05" value="1.35" />
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">
+          <span>Направление солнца</span>
+          <span id="val-sun-azimuth" class="control-val">75°</span>
+        </div>
+        <input id="slider-sun-azimuth" type="range" min="0" max="360" step="1" value="75" />
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">
+          <span>Высота солнца</span>
+          <span id="val-sun-elevation" class="control-val">32°</span>
+        </div>
+        <input id="slider-sun-elevation" type="range" min="8" max="80" step="1" value="32" />
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">
+          <span>Заполняющий свет</span>
+          <span id="val-fill" class="control-val">1.00</span>
+        </div>
+        <input id="slider-fill" type="range" min="0.15" max="2.20" step="0.05" value="1.00" />
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="toggle-row">
+        <span>Мягкие тени</span>
+        <button id="btn-shadows" class="switch-btn on" type="button" role="switch" aria-checked="true" aria-label="Переключить тени"></button>
+      </div>
+
+      <div class="control-group">
+        <div class="control-label"><span>Фон сцены</span></div>
+        <div id="bg-mode-group" class="segmented">
+          <button class="seg-btn active" type="button" data-bg="dark">Тёмный</button>
+          <button class="seg-btn" type="button" data-bg="light">Светлый</button>
+          <button class="seg-btn" type="button" data-bg="neutral">Нейтр.</button>
+        </div>
+      </div>
+
+      <button id="btn-reset-light" class="action-btn" type="button">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+          <polyline points="1 4 1 10 7 10"/>
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+        </svg>
+        <span>Сбросить свет</span>
+      </button>
+    </section>
   </div>
 
-  <!-- ================= BLUEPRINT VIEWER MODAL ================= -->
-  <div class="modal-backdrop" id="bp-modal">
-    <div class="modal-box">
-      <div class="modal-header">
-        <strong id="bp-modal-title">Чертёж</strong>
-        <div class="row">
-          <button id="bp-zoom-out" class="btn btn-sm" title="Уменьшить">−</button>
-          <button id="bp-zoom-reset" class="btn btn-sm" title="100%">100%</button>
-          <button id="bp-zoom-in" class="btn btn-sm" title="Увеличить">+</button>
-          <button id="bp-modal-close" class="btn btn-sm btn-danger">Закрыть</button>
-        </div>
-      </div>
-      <div class="modal-body" id="bp-modal-body"></div>
-    </div>
+  <!-- Компактный индикатор загрузки -->
+  <div id="loader-overlay" class="loader-overlay" role="status" aria-live="polite">
+    <div class="spinner" id="loader-spinner"></div>
+    <span id="loader-text">Загрузка 3D-модели…</span>
   </div>
-
-  <!-- ================= SHORTCUTS MODAL ================= -->
-  <div class="modal-backdrop" id="help-modal">
-    <div class="modal-box" style="max-width:540px">
-      <div class="modal-header">
-        <strong>Управление и горячие клавиши</strong>
-        <button id="help-modal-close" class="btn btn-sm">Закрыть</button>
-      </div>
-      <div class="modal-body" style="display:block;min-width:min(480px,85vw);min-height:auto;background:var(--bg-panel)">
-        <table class="shortcuts-table">
-          <tr><td>1 – 6</td><td>Быстрые виды: Изометрия, Спереди, Сзади, Слева, Справа, Сверху</td></tr>
-          <tr><td>Двойной клик</td><td>Подлёт и фокусировка камеры на выбранной детали (Raycaster)</td></tr>
-          <tr><td>F / Home</td><td>Фокус на выделенном / Показать всю сцену</td></tr>
-          <tr><td>W A S D / Стрелки</td><td>Свободное перемещение камеры (с учётом взгляда; при выделении — с ПКМ)</td></tr>
-          <tr><td>Q / E</td><td>Движение камеры вниз / вверх</td></tr>
-          <tr><td>Клик / Ctrl+клик</td><td>Выделение модели / Множественное выделение группы</td></tr>
-          <tr><td>G (T) / R / S</td><td>Гизмо при выделенной модели: Перемещение / Вращение / Масштаб</td></tr>
-          <tr><td>Shift + Гизмо</td><td>Привязка по шагу перемещения (0.25) и углам поворота (15°)</td></tr>
-          <tr><td>Ctrl + Z</td><td>Отмена последней трансформации</td></tr>
-          <tr><td>Esc</td><td>Снять выделение</td></tr>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- Toasts -->
-  <div class="toast-stack" id="toast-stack"></div>
 
   <script>
   (() => {
     'use strict';
 
     /* =========================================================================
-       КОНФИГУРАЦИЯ И ЗАЩИТНАЯ ПРОВЕРКА ЗАВИСИМОСТЕЙ
+       1. НАСТРОЙКИ МОДЕЛИ И ПРЕСЕТЫ КАМЕРЫ (ЛЕГКО КОРРЕКТИРОВАТЬ ВРУЧНУЮ)
        ========================================================================= */
-    const DRACO_DECODER_PATH = 'https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/libs/draco/gltf/';
 
-    if (typeof THREE === 'undefined') {
-      document.body.innerHTML =
-        '<div style="padding:32px;color:#fca5a5;font-family:system-ui,sans-serif">' +
-        '<h2>Не удалось загрузить Three.js</h2>' +
-        '<p>Проверьте подключение к интернету или разместите библиотеки локально в папке <code>./libs/</code>.</p>' +
-        '</div>';
+    // Относительный путь к .glb файлу рядом с index.html в репозитории GitHub Pages.
+    // Замените 'model.glb' на точное имя вашего файла, если оно отличается.
+    const MODEL_URL = './model.glb';
+
+    // 5 ракурсов, рассчитанных по центрированной геометрии аудитории (в метрах):
+    //   Комната Plane: X ∈ [-5.02, +5.02], Y ∈ [0.00, 3.65], Z ∈ [-8.75, +8.75]
+    //   Учебная доска Plane.002: у стены Z ≈ +8.74
+    //   Стол преподавателя Cube.005 / кресло Cube.006: X ≈ +2.96, Z ≈ +4.81
+    //   Столы студентов Cube.004: X ∈ [-4.46, +4.06], Z ∈ [-6.10, +4.27]
+    //
+    // Чтобы зафиксировать свои координаты вручную, измените position/target
+    // и поставьте autoFit: false у нужного ракурса.
+    const CAMERA_PRESETS = {
+      overview: {
+        label: 'Общий план',
+        hint: 'Обзор 360° из центра',
+        position: [0.0, 1.62, 0.0],
+        target: [0.0, 1.58, 0.08], // Минимальная дистанция (~8 см) для вращения 360° вокруг себя
+        autoFit: true
+      },
+      windowSide: {
+        label: 'Оконная зона',
+        hint: 'Стена с окнами',
+        position: [-2.35, 1.65, -2.10],
+        target: [4.85, 1.65, 1.25],
+        autoFit: true
+      },
+      innerWall: {
+        label: 'Зона напротив окон',
+        hint: 'Внутренняя стена',
+        position: [2.35, 1.65, -2.00],
+        target: [-4.85, 1.65, 1.35],
+        autoFit: true
+      },
+      teacherDesk: {
+        label: 'Стол преподавателя',
+        hint: 'Рабочее место преподавателя',
+        position: [0.65, 1.65, 2.75],
+        target: [2.88, 0.80, 4.88],
+        autoFit: true
+      },
+      studentDesk: {
+        label: 'Стол студента',
+        hint: 'Рабочее место студента',
+        position: [-1.45, 1.50, -0.35],
+        target: [-0.15, 0.78, 1.05],
+        autoFit: true
+      }
+    };
+
+    // Базовые настройки света для светло-серого интерьера без пересветов и провалов
+    const DEFAULT_LIGHTING = {
+      exposure: 0.95,
+      sunIntensity: 1.35,
+      sunAzimuth: 75,     // Будет автоматически подстроен под найденную оконную стену
+      sunElevation: 32,   // Угол, при котором лучи проходят через оконные проёмы внутрь
+      fillIntensity: 1.0,
+      shadows: true,
+      bgMode: 'dark'
+    };
+
+    /* =========================================================================
+       2. ПРОВЕРКА ЗАВИСИМОСТЕЙ И DOM-ЭЛЕМЕНТЫ
+       ========================================================================= */
+    const dom = {
+      viewport: document.getElementById('viewport'),
+      btnTabViews: document.getElementById('btn-tab-views'),
+      btnTabRender: document.getElementById('btn-tab-render'),
+      btnSnapshot: document.getElementById('btn-snapshot'),
+      panelViews: document.getElementById('panel-views'),
+      panelRender: document.getElementById('panel-render'),
+      presetList: document.getElementById('preset-list'),
+      loaderOverlay: document.getElementById('loader-overlay'),
+      loaderSpinner: document.getElementById('loader-spinner'),
+      loaderText: document.getElementById('loader-text'),
+      sliderExposure: document.getElementById('slider-exposure'),
+      valExposure: document.getElementById('val-exposure'),
+      sliderSunIntensity: document.getElementById('slider-sun-intensity'),
+      valSunIntensity: document.getElementById('val-sun-intensity'),
+      sliderSunAzimuth: document.getElementById('slider-sun-azimuth'),
+      valSunAzimuth: document.getElementById('val-sun-azimuth'),
+      sliderSunElevation: document.getElementById('slider-sun-elevation'),
+      valSunElevation: document.getElementById('val-sun-elevation'),
+      sliderFill: document.getElementById('slider-fill'),
+      valFill: document.getElementById('val-fill'),
+      btnShadows: document.getElementById('btn-shadows'),
+      btnResetLight: document.getElementById('btn-reset-light')
+    };
+
+    function showLoaderError(title, detail) {
+      dom.loaderOverlay.classList.remove('hidden');
+      dom.loaderOverlay.classList.add('error');
+      dom.loaderSpinner.style.display = 'none';
+      dom.loaderText.innerHTML =
+        '<strong>' + title + '</strong><br><span style="font-size:12px;opacity:0.88">' + detail + '</span>';
+    }
+
+    if (typeof THREE === 'undefined' || typeof THREE.GLTFLoader === 'undefined' || typeof THREE.OrbitControls === 'undefined') {
+      showLoaderError('Не удалось загрузить 3D-движок', 'Проверьте доступность cdn.jsdelivr.net.');
       return;
     }
 
     const HAS_GSAP = typeof gsap !== 'undefined';
-    const HAS_ORBIT = typeof THREE.OrbitControls !== 'undefined';
-    const HAS_TRANSFORM = typeof THREE.TransformControls !== 'undefined';
-    const HAS_GLTF = typeof THREE.GLTFLoader !== 'undefined';
-    const HAS_DRACO = typeof THREE.DRACOLoader !== 'undefined';
-    const HAS_OBJ = typeof THREE.OBJLoader !== 'undefined';
-    const HAS_STL = typeof THREE.STLLoader !== 'undefined';
-    const HAS_FBX = typeof THREE.FBXLoader !== 'undefined';
-    const HAS_EXPORTER = typeof THREE.GLTFExporter !== 'undefined';
 
     /* =========================================================================
-       СОСТОЯНИЕ ПРИЛОЖЕНИЯ (МЕНЕДЖЕР СЦЕНЫ)
-       ========================================================================= */
-    const state = {
-      loadedModels: [],      // [{ id, name, format, root, meshes, initialTransform, expanded, visible }]
-      allMeshes: [],         // плоский список всех мешей сцены для Raycaster
-      selectedModelIds: new Set(),
-      selectedSubMesh: null,
-      gizmoMode: 'translate',
-      wireframeEnabled: false,
-      xrayEnabled: false,
-      autoTourEnabled: false,
-      explodeValue: 0,
-      shadowsEnabled: true,
-      gridEnabled: true,
-      bgMode: 'dark',
-      exposure: 0.98,
-      sunAzimuth: 42,
-      sunElevation: 52,
-      shadowOpacity: 0.25,
-      bookmarks: [],
-      blueprints: [],
-      undoStack: [],
-      nextModelId: 1,
-      nextBookmarkId: 1,
-      nextBlueprintId: 1,
-      isShiftDown: false,
-      isRightMouseDown: false,
-      isGizmoDragging: false,
-      wasGizmoDragging: false,
-      activeTransformBefore: null,
-      bpZoom: 1
-    };
-
-    const keysHeld = new Set();
-
-    /* =========================================================================
-       DOM-ССЫЛКИ
-       ========================================================================= */
-    const dom = {
-      viewportWrap: document.getElementById('viewport-wrap'),
-      canvasContainer: document.getElementById('canvas-container'),
-      emptyOverlay: document.getElementById('empty-overlay'),
-      dropBanner: document.getElementById('drop-banner'),
-      loaderPill: document.getElementById('loader-pill'),
-      loaderText: document.getElementById('loader-text'),
-      sidebar: document.getElementById('sidebar'),
-      modelFileInput: document.getElementById('model-file-input'),
-      blueprintFileInput: document.getElementById('blueprint-file-input'),
-      outlinerList: document.getElementById('outliner-list'),
-      bookmarksList: document.getElementById('bookmarks-list'),
-      blueprintsContainer: document.getElementById('blueprints-container'),
-      countObjects: document.getElementById('count-objects'),
-      countBookmarks: document.getElementById('count-bookmarks'),
-      countBlueprints: document.getElementById('count-blueprints'),
-      selectedCounter: document.getElementById('selected-counter'),
-      multiActionsBar: document.getElementById('multi-actions-bar'),
-      transformInfoCard: document.getElementById('transform-info-card'),
-      gizmoModeLabel: document.getElementById('gizmo-mode-label'),
-      valTx: document.getElementById('val-tx'),
-      valTy: document.getElementById('val-ty'),
-      valTz: document.getElementById('val-tz'),
-      statModels: document.getElementById('stat-models'),
-      statMeshes: document.getElementById('stat-meshes'),
-      chkPreserveCoords: document.getElementById('chk-preserve-coords'),
-      sliderExplode: document.getElementById('slider-explode'),
-      valExplode: document.getElementById('val-explode'),
-      sliderExposure: document.getElementById('slider-exposure'),
-      valExposure: document.getElementById('val-exposure'),
-      sliderAzimuth: document.getElementById('slider-azimuth'),
-      valAzimuth: document.getElementById('val-azimuth'),
-      sliderElevation: document.getElementById('slider-elevation'),
-      valElevation: document.getElementById('val-elevation'),
-      sliderShadowOpacity: document.getElementById('slider-shadow-opacity'),
-      valShadowOpacity: document.getElementById('val-shadow-opacity'),
-      btnToggleShadows: document.getElementById('btn-toggle-shadows'),
-      btnToggleGrid: document.getElementById('btn-toggle-grid'),
-      btnWireframe: document.getElementById('btn-wireframe'),
-      btnXray: document.getElementById('btn-xray'),
-      btnAutotour: document.getElementById('btn-autotour'),
-      btnUndo: document.getElementById('btn-undo'),
-      btnGizmoTranslate: document.getElementById('btn-gizmo-translate'),
-      btnGizmoRotate: document.getElementById('btn-gizmo-rotate'),
-      btnGizmoScale: document.getElementById('btn-gizmo-scale'),
-      btnToggleSidebar: document.getElementById('btn-toggle-sidebar'),
-      bookmarkNameInput: document.getElementById('bookmark-name-input'),
-      bpModal: document.getElementById('bp-modal'),
-      bpModalTitle: document.getElementById('bp-modal-title'),
-      bpModalBody: document.getElementById('bp-modal-body'),
-      helpModal: document.getElementById('help-modal'),
-      toastStack: document.getElementById('toast-stack')
-    };
-
-    /* =========================================================================
-       УВЕДОМЛЕНИЯ (TOASTS) И ЗАГРУЗЧИК
-       ========================================================================= */
-    function showToast(message, type = 'info') {
-      const el = document.createElement('div');
-      el.className = 'toast ' + type;
-      el.textContent = message;
-      dom.toastStack.appendChild(el);
-      setTimeout(() => {
-        el.style.opacity = '0';
-        el.style.transition = 'opacity 0.25s';
-        setTimeout(() => el.remove(), 260);
-      }, 3000);
-    }
-
-    function setLoading(active, text = 'Загрузка...') {
-      dom.loaderText.textContent = text;
-      dom.loaderPill.classList.toggle('active', active);
-    }
-
-    /* =========================================================================
-       ИНИЦИАЛИЗАЦИЯ THREE.JS, PBR-ОКРУЖЕНИЯ, СВЕТА И ТЕНЕЙ
+       3. СЦЕНА, КАМЕРА, PBR-РЕНДЕРЕР И ПРОЦЕДУРНАЯ СРЕДА (PMREM)
        ========================================================================= */
     const scene = new THREE.Scene();
 
-    const camera = new THREE.PerspectiveCamera(45, 1, 0.05, 2000);
-    camera.position.set(6, 4.5, 6);
+    const BG_COLORS = {
+      dark: new THREE.Color(0x141820),
+      light: new THREE.Color(0xe9eef5),
+      neutral: new THREE.Color(0x646c79)
+    };
+    scene.background = BG_COLORS.dark;
+
+    // Параметры камеры адаптированы под работу внутри помещения
+    const camera = new THREE.PerspectiveCamera(56, 1, 0.03, 150);
+    camera.position.set(0, 1.62, 0);
 
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -1580,70 +741,44 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = state.exposure;
+    renderer.toneMappingExposure = DEFAULT_LIGHTING.exposure;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    dom.canvasContainer.appendChild(renderer.domElement);
+    dom.viewport.appendChild(renderer.domElement);
 
-    // Процедурные фоны (включая градиент через CanvasTexture для чистого PNG-снимка)
-    function createGradientTexture(topHex, bottomHex) {
-      const canvas = document.createElement('canvas');
-      canvas.width = 4;
-      canvas.height = 512;
-      const ctx = canvas.getContext('2d');
-      const grad = ctx.createLinearGradient(0, 0, 0, 512);
-      grad.addColorStop(0, topHex);
-      grad.addColorStop(0.55, '#1d2738');
-      grad.addColorStop(1, bottomHex);
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 4, 512);
-      const tex = new THREE.CanvasTexture(canvas);
-      tex.encoding = THREE.sRGBEncoding;
-      return tex;
-    }
-
-    const bgAssets = {
-      dark: new THREE.Color(0x141821),
-      studio: new THREE.Color(0xe6ebf2),
-      gradient: createGradientTexture('#0b1220', '#2b394f')
-    };
-
-    // Процедурная студийная среда через PMREMGenerator (без внешних HDRI и jsm)
-    function buildProceduralEnvironment() {
+    // Локальная процедурная карта окружения через PMREMGenerator (без внешних HDRI и jsm)
+    function buildInteriorEnvironment() {
       const pmrem = new THREE.PMREMGenerator(renderer);
       pmrem.compileCubemapShader();
 
       const envScene = new THREE.Scene();
-      envScene.background = new THREE.Color(0x1f2530);
+      envScene.background = new THREE.Color(0x28303d);
 
-      const roomGeo = new THREE.BoxGeometry(24, 16, 24);
-      const roomMat = new THREE.MeshStandardMaterial({
-        color: 0x3b4252,
-        roughness: 0.9,
+      const shellGeo = new THREE.BoxGeometry(20, 12, 20);
+      const shellMat = new THREE.MeshStandardMaterial({
+        color: 0x4b5563,
+        roughness: 0.92,
         metalness: 0.0,
         side: THREE.BackSide
       });
-      const room = new THREE.Mesh(roomGeo, roomMat);
-      room.position.y = 4;
-      envScene.add(room);
+      const shell = new THREE.Mesh(shellGeo, shellMat);
+      envScene.add(shell);
 
-      const panels = [
-        // Потолочный софтбокс
-        { pos: [0, 11.4, 0], rot: [Math.PI / 2, 0, 0], size: [12, 12], color: 0xffffff, intensity: 3.4 },
-        // Главный тёплый боковой софтбокс
-        { pos: [11.2, 5.5, 4.5], rot: [0, -Math.PI / 2, 0], size: [8, 6], color: 0xfff4e4, intensity: 4.0 },
-        // Заполняющая прохладная панель
-        { pos: [-11.2, 4.5, -3.5], rot: [0, Math.PI / 2, 0], size: [9, 6], color: 0xd8e8ff, intensity: 2.3 },
-        // Контровой световой акцент
-        { pos: [0, 5.0, -11.2], rot: [0, 0, 0], size: [10, 4.5], color: 0xeaf2ff, intensity: 2.0 },
-        // Мягкий фронтальный блик
-        { pos: [-2, 3.5, 11.2], rot: [0, Math.PI, 0], size: [6, 3.5], color: 0xf6f8fc, intensity: 1.4 }
+      const emitters = [
+        // Потолочный рассеянный свет
+        { pos: [0, 5.7, 0], rot: [Math.PI / 2, 0, 0], size: [12, 12], color: 0xf4f7fb, mult: 1.9 },
+        // Имитация светлого окна сбоку
+        { pos: [9.6, 1.5, 0], rot: [0, -Math.PI / 2, 0], size: [14, 5], color: 0xfff8ec, mult: 2.6 },
+        // Мягкий отражённый свет от противоположной стены
+        { pos: [-9.6, 1.0, 0], rot: [0, Math.PI / 2, 0], size: [12, 4.5], color: 0xdbe7f8, mult: 1.1 },
+        // Тёплый отскок от пола
+        { pos: [0, -5.7, 0], rot: [-Math.PI / 2, 0, 0], size: [14, 14], color: 0x5c5852, mult: 0.7 }
       ];
 
-      const disposables = [roomGeo, roomMat];
-      panels.forEach((p) => {
+      const disposables = [shellGeo, shellMat];
+      emitters.forEach((p) => {
         const g = new THREE.PlaneGeometry(p.size[0], p.size[1]);
-        const c = new THREE.Color(p.color).multiplyScalar(p.intensity);
+        const c = new THREE.Color(p.color).multiplyScalar(p.mult);
         const m = new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide });
         const mesh = new THREE.Mesh(g, m);
         mesh.position.set(p.pos[0], p.pos[1], p.pos[2]);
@@ -1652,1999 +787,704 @@
         disposables.push(g, m);
       });
 
-      const envRT = pmrem.fromScene(envScene, 0.04);
-      disposables.forEach((d) => d.dispose());
+      const rt = pmrem.fromScene(envScene, 0.05);
+      disposables.forEach((item) => item.dispose());
       pmrem.dispose();
-      return envRT;
+      return rt;
     }
 
-    const proceduralEnvRT = buildProceduralEnvironment();
-    scene.environment = proceduralEnvRT.texture;
+    const envRenderTarget = buildInteriorEnvironment();
+    scene.environment = envRenderTarget.texture;
 
-    // Сбалансированное PBR-освещение без пересвета
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.25);
+    /* =========================================================================
+       4. ОСВЕЩЕНИЕ ИНТЕРЬЕРА И ТЕНИ
+       ========================================================================= */
+    const BASE_HEMI_INTENSITY = 0.56;
+    const BASE_AMBIENT_INTENSITY = 0.22;
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, BASE_AMBIENT_INTENSITY);
     scene.add(ambientLight);
 
-    const hemiLight = new THREE.HemisphereLight(0xf2f6ff, 0x262c38, 0.38);
-    hemiLight.position.set(0, 30, 0);
+    const hemiLight = new THREE.HemisphereLight(0xf1f6ff, 0x4c5463, BASE_HEMI_INTENSITY);
+    hemiLight.position.set(0, 12, 0);
     scene.add(hemiLight);
 
-    const keyLight = new THREE.DirectionalLight(0xfffaf0, 1.18);
-    keyLight.castShadow = true;
-    keyLight.shadow.mapSize.set(2048, 2048);
-    keyLight.shadow.bias = -0.0005;
-    keyLight.shadow.normalBias = 0.02;
-    scene.add(keyLight);
-    scene.add(keyLight.target);
+    const sunLight = new THREE.DirectionalLight(0xfff5e4, DEFAULT_LIGHTING.sunIntensity);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.set(2048, 2048);
+    sunLight.shadow.bias = -0.0004;
+    sunLight.shadow.normalBias = 0.035;
+    scene.add(sunLight);
+    scene.add(sunLight.target);
 
-    const fillLight = new THREE.DirectionalLight(0xcbe0ff, 0.28);
-    fillLight.position.set(-10, 6, -8);
-    scene.add(fillLight);
+    const lightState = { ...DEFAULT_LIGHTING };
+    const roomBounds = new THREE.Box3(
+      new THREE.Vector3(-5.02, 0, -8.75),
+      new THREE.Vector3(5.02, 3.65, 8.75)
+    );
 
-    // Прозрачный пол для мягких теней на уровне Y = 0
-    const shadowFloorMat = new THREE.ShadowMaterial({
-      opacity: state.shadowOpacity,
-      depthWrite: false
-    });
-    const shadowFloor = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), shadowFloorMat);
-    shadowFloor.rotation.x = -Math.PI / 2;
-    shadowFloor.position.y = -0.0005;
-    shadowFloor.receiveShadow = true;
-    shadowFloor.name = '__ShadowFloor__';
-    scene.add(shadowFloor);
+    function updateSunAndShadowBounds() {
+      const center = new THREE.Vector3();
+      const sphere = new THREE.Sphere();
+      roomBounds.getCenter(center);
+      roomBounds.getBoundingSphere(sphere);
+      const radius = Math.max(sphere.radius, 5.0);
 
-    // Сетка пола
-    let floorGrid = new THREE.GridHelper(30, 30, 0x3b475d, 0x242c3b);
-    floorGrid.position.y = -0.001;
-    floorGrid.material.transparent = true;
-    floorGrid.material.opacity = 0.55;
-    scene.add(floorGrid);
+      const az = THREE.MathUtils.degToRad(lightState.sunAzimuth);
+      const el = THREE.MathUtils.degToRad(lightState.sunElevation);
+      const dist = radius * 2.4;
 
-    // Вспомогательная рамка выделения и временный pivot для мультивыделения
-    const selectionBox3 = new THREE.Box3();
-    const selectionBoxHelper = new THREE.Box3Helper(selectionBox3, 0x3b82f6);
-    selectionBoxHelper.visible = false;
-    scene.add(selectionBoxHelper);
+      sunLight.position.set(
+        center.x + dist * Math.cos(el) * Math.sin(az),
+        center.y + dist * Math.sin(el),
+        center.z + dist * Math.cos(el) * Math.cos(az)
+      );
+      sunLight.target.position.copy(center);
+      sunLight.target.updateMatrixWorld();
 
-    const multiPivot = new THREE.Group();
-    multiPivot.name = '__MultiPivot__';
-    scene.add(multiPivot);
-
-    // Контроллеры
-    const controls = HAS_ORBIT ? new THREE.OrbitControls(camera, renderer.domElement) : null;
-    if (controls) {
-      controls.enableDamping = true;
-      controls.dampingFactor = 0.07;
-      controls.screenSpacePanning = true;
-      controls.maxDistance = 500;
-      controls.minDistance = 0.1;
-      controls.autoRotateSpeed = 2.0;
+      const d = radius * 1.12;
+      sunLight.shadow.camera.left = -d;
+      sunLight.shadow.camera.right = d;
+      sunLight.shadow.camera.top = d;
+      sunLight.shadow.camera.bottom = -d;
+      sunLight.shadow.camera.near = Math.max(0.5, dist - radius * 1.6);
+      sunLight.shadow.camera.far = dist + radius * 1.8;
+      sunLight.shadow.camera.updateProjectionMatrix();
+      sunLight.shadow.needsUpdate = true;
     }
 
-    const transformControls = HAS_TRANSFORM ? new THREE.TransformControls(camera, renderer.domElement) : null;
-    if (transformControls) {
-      transformControls.setSize(0.85);
-      transformControls.setMode(state.gizmoMode);
-      scene.add(transformControls);
+    /* =========================================================================
+       5. ORBITCONTROLS (КОМФОРТНОЕ УПРАВЛЕНИЕ В ИНТЕРЬЕРЕ + TOUCH)
+       ========================================================================= */
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.075;
+    controls.screenSpacePanning = true;
+    controls.rotateSpeed = 0.65;
+    controls.zoomSpeed = 0.75;
+    controls.panSpeed = 0.65;
+    controls.minDistance = 0.02;
+    controls.maxDistance = 16;
+    controls.minPolarAngle = Math.PI * 0.06;
+    controls.maxPolarAngle = Math.PI * 0.94;
+    controls.touches = {
+      ONE: THREE.TOUCH.ROTATE,
+      TWO: THREE.TOUCH.DOLLY_PAN
+    };
 
-      transformControls.addEventListener('dragging-changed', (event) => {
-        if (controls) controls.enabled = !event.value;
-        state.isGizmoDragging = event.value;
+    function killCameraTweens() {
+      if (HAS_GSAP) {
+        gsap.killTweensOf(camera.position);
+        gsap.killTweensOf(controls.target);
+      }
+    }
 
-        if (event.value) {
-          killCameraAnimations();
-          state.activeTransformBefore = captureSelectedTransformsSnapshot();
-        } else {
-          state.wasGizmoDragging = true;
-          setTimeout(() => { state.wasGizmoDragging = false; }, 120);
-          if (state.activeTransformBefore) {
-            pushUndoSnapshot(state.activeTransformBefore, 'Трансформация гизмо');
-            state.activeTransformBefore = null;
+    renderer.domElement.addEventListener('pointerdown', killCameraTweens, { passive: true });
+    renderer.domElement.addEventListener('wheel', killCameraTweens, { passive: true });
+    renderer.domElement.addEventListener('touchstart', killCameraTweens, { passive: true });
+
+    let activePresetKey = 'overview';
+
+    function flyToPreset(key, duration = 0.95) {
+      const preset = CAMERA_PRESETS[key];
+      if (!preset) return;
+
+      activePresetKey = key;
+      updateActivePresetUI();
+      killCameraTweens();
+
+      const [px, py, pz] = preset.position;
+      const [tx, ty, tz] = preset.target;
+
+      if (HAS_GSAP && duration > 0) {
+        gsap.to(camera.position, {
+          x: px,
+          y: py,
+          z: pz,
+          duration,
+          ease: 'power2.inOut'
+        });
+        gsap.to(controls.target, {
+          x: tx,
+          y: ty,
+          z: tz,
+          duration,
+          ease: 'power2.inOut',
+          onUpdate: () => controls.update()
+        });
+      } else {
+        camera.position.set(px, py, pz);
+        controls.target.set(tx, ty, tz);
+        controls.update();
+      }
+    }
+
+    /* =========================================================================
+       6. АВТОАНАЛИЗ ГЕОМЕТРИИ МОДЕЛИ (ОКНА, СТОЛ ПРЕПОДАВАТЕЛЯ, СТОЛ СТУДЕНТА)
+       ========================================================================= */
+    function clampInsideRoom(vec, marginXZ = 0.55, minY = 0.45, marginTop = 0.35) {
+      return new THREE.Vector3(
+        THREE.MathUtils.clamp(vec.x, roomBounds.min.x + marginXZ, roomBounds.max.x - marginXZ),
+        THREE.MathUtils.clamp(vec.y, roomBounds.min.y + minY, roomBounds.max.y - marginTop),
+        THREE.MathUtils.clamp(vec.z, roomBounds.min.z + marginXZ, roomBounds.max.z - marginXZ)
+      );
+    }
+
+    // Определяем, на какой длинной стене (-X или +X) находятся оконные проёмы
+    function detectWindowWallSign(roomShellMesh) {
+      if (!roomShellMesh) return 1;
+
+      const raycaster = new THREE.Raycaster();
+      const center = new THREE.Vector3();
+      roomBounds.getCenter(center);
+
+      const minZ = roomBounds.min.z + 1.4;
+      const maxZ = roomBounds.max.z - 1.4;
+      const heights = [1.45, 1.85, 2.25];
+      const samplesZ = 14;
+
+      const measureSide = (sign) => {
+        let openRays = 0;
+        const hitXs = [];
+        const dir = new THREE.Vector3(sign, 0, 0);
+
+        for (let i = 0; i < samplesZ; i++) {
+          const z = THREE.MathUtils.lerp(minZ, maxZ, i / (samplesZ - 1));
+          for (let h = 0; h < heights.length; h++) {
+            raycaster.set(new THREE.Vector3(center.x, heights[h], z), dir);
+            const hits = raycaster.intersectObject(roomShellMesh, false);
+            if (!hits.length) {
+              openRays++;
+            } else {
+              hitXs.push(hits[0].point.x * sign);
+            }
           }
-          updateShadowCameraBounds();
+        }
+
+        // Оцениваем рельеф/откосы по разбросу глубины попаданий и числу вершин у стены
+        let recessHits = 0;
+        if (hitXs.length > 3) {
+          const sorted = hitXs.slice().sort((a, b) => a - b);
+          const baseWallDist = sorted[Math.floor(sorted.length * 0.35)];
+          for (let i = 0; i < hitXs.length; i++) {
+            if (Math.abs(hitXs[i] - baseWallDist) > 0.08) recessHits++;
+          }
+        }
+
+        let wallVerts = 0;
+        const posAttr = roomShellMesh.geometry && roomShellMesh.geometry.attributes.position;
+        if (posAttr) {
+          const wallEdge = sign > 0 ? roomBounds.max.x : roomBounds.min.x;
+          const v = new THREE.Vector3();
+          for (let i = 0; i < posAttr.count; i++) {
+            v.fromBufferAttribute(posAttr, i).applyMatrix4(roomShellMesh.matrixWorld);
+            if (Math.abs(v.x - wallEdge) < 0.5 && v.y > 0.7 && v.y < 3.1) {
+              wallVerts++;
+            }
+          }
+        }
+
+        return openRays * 12 + recessHits * 3 + wallVerts * 0.1;
+      };
+
+      const scorePosX = measureSide(1);
+      const scoreNegX = measureSide(-1);
+      if (Math.abs(scorePosX - scoreNegX) < 1.5) return 1;
+      return scorePosX >= scoreNegX ? 1 : -1;
+    }
+
+    // Находим отдельное рабочее место студента внутри объединённого меша Cube.004
+    function findRepresentativeStudentDesk(studentNode, fallbackBox) {
+      if (!studentNode) return null;
+
+      const meshes = [];
+      studentNode.traverse((child) => {
+        if (child.isMesh && child.geometry && child.geometry.attributes.position) {
+          meshes.push(child);
+        }
+      });
+      if (!meshes.length) return null;
+
+      // Кластеризация вершин по 2D-сетке XZ (шаг 0.28 м) для выделения одного стола
+      const cellSize = 0.28;
+      const cells = new Map();
+      const v = new THREE.Vector3();
+
+      meshes.forEach((mesh) => {
+        mesh.updateMatrixWorld(true);
+        const pos = mesh.geometry.attributes.position;
+        const stride = pos.count > 6000 ? 2 : 1;
+        for (let i = 0; i < pos.count; i += stride) {
+          v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
+          if (v.y < 0.25 || v.y > 1.35) continue;
+          const gx = Math.floor(v.x / cellSize);
+          const gz = Math.floor(v.z / cellSize);
+          const key = gx + ',' + gz;
+          let cell = cells.get(key);
+          if (!cell) {
+            cell = {
+              gx, gz,
+              minX: v.x, maxX: v.x,
+              minY: v.y, maxY: v.y,
+              minZ: v.z, maxZ: v.z
+            };
+            cells.set(key, cell);
+          } else {
+            if (v.x < cell.minX) cell.minX = v.x;
+            if (v.x > cell.maxX) cell.maxX = v.x;
+            if (v.y < cell.minY) cell.minY = v.y;
+            if (v.y > cell.maxY) cell.maxY = v.y;
+            if (v.z < cell.minZ) cell.minZ = v.z;
+            if (v.z > cell.maxZ) cell.maxZ = v.z;
+          }
         }
       });
 
-      transformControls.addEventListener('objectChange', () => {
-        updateSelectionHelper();
-        updateShadowCameraBounds();
-        updateTransformReadout();
+      const visited = new Set();
+      const clusters = [];
+      const neighbors = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+      cells.forEach((startCell, startKey) => {
+        if (visited.has(startKey)) return;
+        const queue = [startKey];
+        visited.add(startKey);
+        const box = new THREE.Box3();
+
+        while (queue.length) {
+          const curKey = queue.pop();
+          const c = cells.get(curKey);
+          box.expandByPoint(new THREE.Vector3(c.minX, c.minY, c.minZ));
+          box.expandByPoint(new THREE.Vector3(c.maxX, c.maxY, c.maxZ));
+
+          for (let n = 0; n < neighbors.length; n++) {
+            const nk = (c.gx + neighbors[n][0]) + ',' + (c.gz + neighbors[n][1]);
+            if (cells.has(nk) && !visited.has(nk)) {
+              visited.add(nk);
+              queue.push(nk);
+            }
+          }
+        }
+
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        if (size.x > 0.45 && size.z > 0.45 && size.x < 3.6 && size.z < 2.6) {
+          const center = new THREE.Vector3();
+          box.getCenter(center);
+          clusters.push({ box, size, center });
+        }
+      });
+
+      if (clusters.length) {
+        // Выбираем стол ближе к передней центральной зоне аудитории (удобно осматривать со всех сторон)
+        const idealPoint = new THREE.Vector3(-0.3, 0.75, 1.1);
+        clusters.sort((a, b) => a.center.distanceTo(idealPoint) - b.center.distanceTo(idealPoint));
+        return clusters[0].box;
+      }
+
+      // Надёжный fallback по Box3 массива студенческих столов
+      if (fallbackBox && !fallbackBox.isEmpty()) {
+        const c = new THREE.Vector3();
+        fallbackBox.getCenter(c);
+        return new THREE.Box3(
+          new THREE.Vector3(c.x - 0.65, 0, c.z + 0.5),
+          new THREE.Vector3(c.x + 0.65, Math.min(fallbackBox.max.y, 1.15), c.z + 1.7)
+        );
+      }
+      return null;
+    }
+
+    function calibratePresetsFromModel(modelRoot) {
+      modelRoot.updateMatrixWorld(true);
+
+      // Поиск ключевых узлов прикреплённой модели
+      let roomShell = null;
+      let maxShellVol = 0;
+      const teacherNodes = [];
+      let studentNode = null;
+      let boardNode = null;
+
+      modelRoot.traverse((obj) => {
+        const name = obj.name || '';
+        if (obj.isMesh) {
+          const b = new THREE.Box3().setFromObject(obj);
+          const s = new THREE.Vector3();
+          b.getSize(s);
+          const vol = s.x * s.y * s.z;
+          if (name === 'Plane' || (!roomShell && vol > maxShellVol)) {
+            if (name === 'Plane' || vol > maxShellVol) {
+              maxShellVol = vol;
+              roomShell = obj;
+            }
+          }
+        }
+
+        if (name === 'Plane.002') boardNode = obj;
+        if (name === 'Cube.004') studentNode = obj;
+        if (name === 'Cube.005' || name === 'Cube.006') teacherNodes.push(obj);
+      });
+
+      const roomSize = new THREE.Vector3();
+      const roomCenter = new THREE.Vector3();
+      roomBounds.getSize(roomSize);
+      roomBounds.getCenter(roomCenter);
+
+      const eyeY = Math.min(1.62, roomSize.y * 0.45);
+      const windowSign = detectWindowWallSign(roomShell);
+
+      // Определяем, в какую сторону смотрит доска (+Z или -Z)
+      let frontSign = 1;
+      if (boardNode) {
+        const bBox = new THREE.Box3().setFromObject(boardNode);
+        const bCenter = new THREE.Vector3();
+        bBox.getCenter(bCenter);
+        frontSign = bCenter.z >= roomCenter.z ? 1 : -1;
+      }
+
+      // Направляем солнце по умолчанию со стороны найденной оконной стены внутрь аудитории
+      DEFAULT_LIGHTING.sunAzimuth = windowSign > 0 ? 75 : 285;
+      lightState.sunAzimuth = DEFAULT_LIGHTING.sunAzimuth;
+      dom.sliderSunAzimuth.value = String(lightState.sunAzimuth);
+      dom.valSunAzimuth.textContent = lightState.sunAzimuth + '°';
+
+      // 1. Общий план — центр комнаты на уровне глаз, target на минимальном расстоянии для 360°
+      if (CAMERA_PRESETS.overview.autoFit) {
+        const pos = new THREE.Vector3(roomCenter.x, eyeY, roomCenter.z);
+        const target = new THREE.Vector3(roomCenter.x, eyeY - 0.04, roomCenter.z + frontSign * 0.08);
+        CAMERA_PRESETS.overview.position = [pos.x, pos.y, pos.z];
+        CAMERA_PRESETS.overview.target = [target.x, target.y, target.z];
+      }
+
+      // 2. Оконная зона — ракурс на стену с окнами
+      if (CAMERA_PRESETS.windowSide.autoFit) {
+        const pos = clampInsideRoom(new THREE.Vector3(
+          roomCenter.x - windowSign * (roomSize.x * 0.24),
+          eyeY + 0.04,
+          roomCenter.z - frontSign * (roomSize.z * 0.13)
+        ));
+        const target = new THREE.Vector3(
+          windowSign > 0 ? roomBounds.max.x - 0.15 : roomBounds.min.x + 0.15,
+          eyeY + 0.02,
+          roomCenter.z + frontSign * (roomSize.z * 0.08)
+        );
+        CAMERA_PRESETS.windowSide.position = [pos.x, pos.y, pos.z];
+        CAMERA_PRESETS.windowSide.target = [target.x, target.y, target.z];
+      }
+
+      // 3. Зона напротив окон — ракурс на внутреннюю стену
+      if (CAMERA_PRESETS.innerWall.autoFit) {
+        const innerSign = -windowSign;
+        const pos = clampInsideRoom(new THREE.Vector3(
+          roomCenter.x - innerSign * (roomSize.x * 0.24),
+          eyeY + 0.04,
+          roomCenter.z - frontSign * (roomSize.z * 0.12)
+        ));
+        const target = new THREE.Vector3(
+          innerSign > 0 ? roomBounds.max.x - 0.15 : roomBounds.min.x + 0.15,
+          eyeY + 0.02,
+          roomCenter.z + frontSign * (roomSize.z * 0.09)
+        );
+        CAMERA_PRESETS.innerWall.position = [pos.x, pos.y, pos.z];
+        CAMERA_PRESETS.innerWall.target = [target.x, target.y, target.z];
+      }
+
+      // 4. Стол преподавателя (Cube.005 + Cube.006)
+      if (CAMERA_PRESETS.teacherDesk.autoFit && teacherNodes.length) {
+        const tBox = new THREE.Box3();
+        teacherNodes.forEach((n) => tBox.expandByObject(n));
+        if (!tBox.isEmpty()) {
+          const tCenter = new THREE.Vector3();
+          tBox.getCenter(tCenter);
+          // Ставим камеру в свободной центральной зоне перед столом под аккуратным углом 3/4
+          const dirToCenterX = tCenter.x >= roomCenter.x ? -1 : 1;
+          const target = new THREE.Vector3(tCenter.x, Math.min(tBox.max.y * 0.66, 0.84), tCenter.z);
+          const pos = clampInsideRoom(new THREE.Vector3(
+            tCenter.x + dirToCenterX * 2.15,
+            1.62,
+            tCenter.z - frontSign * 2.05
+          ));
+          CAMERA_PRESETS.teacherDesk.position = [pos.x, pos.y, pos.z];
+          CAMERA_PRESETS.teacherDesk.target = [target.x, target.y, target.z];
+        }
+      }
+
+      // 5. Стол студента (выделенный кластер из Cube.004)
+      if (CAMERA_PRESETS.studentDesk.autoFit && studentNode) {
+        const allStudentsBox = new THREE.Box3().setFromObject(studentNode);
+        const deskBox = findRepresentativeStudentDesk(studentNode, allStudentsBox);
+        if (deskBox && !deskBox.isEmpty()) {
+          const dCenter = new THREE.Vector3();
+          deskBox.getCenter(dCenter);
+          const sideDir = dCenter.x >= roomCenter.x ? -1 : 1;
+          const target = new THREE.Vector3(dCenter.x, Math.min(deskBox.max.y * 0.68, 0.82), dCenter.z);
+          const pos = clampInsideRoom(new THREE.Vector3(
+            dCenter.x + sideDir * 1.25,
+            1.48,
+            dCenter.z - frontSign * 1.38
+          ));
+          CAMERA_PRESETS.studentDesk.position = [pos.x, pos.y, pos.z];
+          CAMERA_PRESETS.studentDesk.target = [target.x, target.y, target.z];
+        }
+      }
+    }
+
+    /* =========================================================================
+       7. АВТОЗАГРУЗКА ВСТРОЕННОЙ 3D-МОДЕЛИ
+       ========================================================================= */
+    const modelGroup = new THREE.Group();
+    scene.add(modelGroup);
+
+    const gltfLoader = new THREE.GLTFLoader();
+
+    gltfLoader.load(
+      MODEL_URL,
+      (gltf) => {
+        const root = gltf.scene || (gltf.scenes && gltf.scenes[0]);
+        if (!root) {
+          showLoaderError('Модель пуста', 'В файле ' + MODEL_URL + ' не найдено 3D-сцены.');
+          return;
+        }
+
+        // Настройка PBR-материалов и теней для всех мешей
+        root.traverse((child) => {
+          if (!child.isMesh) return;
+          child.castShadow = true;
+          child.receiveShadow = true;
+
+          const mats = Array.isArray(child.material) ? child.material : [child.material];
+          mats.forEach((mat) => {
+            if (!mat) return;
+            if ('envMapIntensity' in mat) mat.envMapIntensity = 0.55;
+            mat.needsUpdate = true;
+          });
+        });
+
+        // Нормализация позиции: центрируем по X и Z, пол на Y = 0, сохраняем масштаб в метрах
+        root.updateMatrixWorld(true);
+        const rawBox = new THREE.Box3().setFromObject(root);
+        const rawCenter = new THREE.Vector3();
+        rawBox.getCenter(rawCenter);
+
+        root.position.set(-rawCenter.x, -rawBox.min.y, -rawCenter.z);
+        modelGroup.add(root);
+        modelGroup.updateMatrixWorld(true);
+
+        roomBounds.setFromObject(modelGroup);
+        calibratePresetsFromModel(modelGroup);
+        updateSunAndShadowBounds();
+
+        // Стартуем сразу в центре аудитории («Общий план»)
+        flyToPreset('overview', 0);
+
+        dom.loaderOverlay.classList.add('hidden');
+      },
+      (xhr) => {
+        if (xhr && xhr.total > 0) {
+          const pct = Math.min(100, Math.round((xhr.loaded / xhr.total) * 100));
+          dom.loaderText.textContent = 'Загрузка модели… ' + pct + '%';
+        }
+      },
+      (err) => {
+        console.error('Ошибка загрузки модели:', err);
+        const isFileProtocol = window.location.protocol === 'file:';
+        showLoaderError(
+          'Не удалось загрузить ' + MODEL_URL,
+          isFileProtocol
+            ? 'Откройте страницу через GitHub Pages или локальный сервер (например, python -m http.server).'
+            : 'Убедитесь, что файл ' + MODEL_URL + ' лежит в той же папке, что и index.html.'
+        );
+      }
+    );
+
+    /* =========================================================================
+       8. ИНТЕРФЕЙС: ЯРЛЫКИ, ВКЛАДКИ «РАКУРСЫ», «РЕНДЕР» И «СНИМОК PNG»
+       ========================================================================= */
+    let openTab = null; // 'views' | 'render' | null
+
+    function setOpenTab(tabName) {
+      openTab = openTab === tabName ? null : tabName;
+
+      const viewsOpen = openTab === 'views';
+      const renderOpen = openTab === 'render';
+
+      dom.panelViews.classList.toggle('open', viewsOpen);
+      dom.panelRender.classList.toggle('open', renderOpen);
+      dom.btnTabViews.classList.toggle('active', viewsOpen);
+      dom.btnTabRender.classList.toggle('active', renderOpen);
+      dom.btnTabViews.setAttribute('aria-expanded', String(viewsOpen));
+      dom.btnTabRender.setAttribute('aria-expanded', String(renderOpen));
+    }
+
+    dom.btnTabViews.addEventListener('click', () => setOpenTab('views'));
+    dom.btnTabRender.addEventListener('click', () => setOpenTab('render'));
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && openTab) setOpenTab(null);
+    });
+
+    // Генерация кнопок 5 ракурсов
+    function renderPresetButtons() {
+      dom.presetList.innerHTML = '';
+      Object.entries(CAMERA_PRESETS).forEach(([key, preset], index) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'preset-btn' + (key === activePresetKey ? ' active' : '');
+        btn.dataset.preset = key;
+        btn.innerHTML =
+          '<span class="preset-info">' +
+            '<span class="preset-name">' + preset.label + '</span>' +
+            '<span class="preset-sub">' + preset.hint + '</span>' +
+          '</span>' +
+          '<span class="preset-idx">' + (index + 1) + '</span>';
+
+        btn.addEventListener('click', () => {
+          flyToPreset(key, 0.95);
+          if (window.innerWidth <= 520) setOpenTab(null);
+        });
+        dom.presetList.appendChild(btn);
       });
     }
 
-    // Применение фона и обновление контрастности сетки
+    function updateActivePresetUI() {
+      dom.presetList.querySelectorAll('.preset-btn').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.preset === activePresetKey);
+      });
+    }
+
+    renderPresetButtons();
+
+    // Применение настроек рендера
+    function applyFillLight(factor) {
+      hemiLight.intensity = BASE_HEMI_INTENSITY * factor;
+      ambientLight.intensity = BASE_AMBIENT_INTENSITY * factor;
+    }
+
     function applyBackground(mode) {
-      state.bgMode = mode;
-      scene.background = bgAssets[mode] || bgAssets.dark;
-      if (floorGrid) {
-        scene.remove(floorGrid);
-        floorGrid.geometry.dispose();
-        if (Array.isArray(floorGrid.material)) floorGrid.material.forEach((m) => m.dispose());
-        else floorGrid.material.dispose();
-
-        const isLight = mode === 'studio';
-        floorGrid = new THREE.GridHelper(
-          30,
-          30,
-          isLight ? 0x9aa6b8 : 0x3b475d,
-          isLight ? 0xcad3e0 : 0x242c3b
-        );
-        floorGrid.position.y = -0.001;
-        floorGrid.material.transparent = true;
-        floorGrid.material.opacity = isLight ? 0.65 : 0.52;
-        floorGrid.visible = state.gridEnabled;
-        scene.add(floorGrid);
-      }
-
+      lightState.bgMode = mode;
+      scene.background = BG_COLORS[mode] || BG_COLORS.dark;
       document.querySelectorAll('#bg-mode-group .seg-btn').forEach((btn) => {
         btn.classList.toggle('active', btn.dataset.bg === mode);
       });
     }
-    applyBackground('dark');
 
-    /* =========================================================================
-       ДИНАМИЧЕСКАЯ ПОДГОНКА ГРАНИЦ ТЕНЕВОЙ КАМЕРЫ И ПОЗИЦИИ СОЛНЦА
-       ========================================================================= */
-    function getSceneBoundingBox(onlyVisible = true) {
-      const box = new THREE.Box3();
-      state.loadedModels.forEach((m) => {
-        if (!onlyVisible || m.visible) {
-          m.root.updateMatrixWorld(true);
-          box.expandByObject(m.root);
-        }
-      });
-      return box;
-    }
-
-    function updateShadowCameraBounds() {
-      const box = getSceneBoundingBox(true);
-      const center = new THREE.Vector3(0, 1, 0);
-      let radius = 4.5;
-
-      if (!box.isEmpty()) {
-        const sphere = new THREE.Sphere();
-        box.getBoundingSphere(sphere);
-        center.copy(sphere.center);
-        radius = Math.max(sphere.radius, 1.5);
-      }
-
-      const az = THREE.MathUtils.degToRad(state.sunAzimuth);
-      const el = THREE.MathUtils.degToRad(state.sunElevation);
-      const dist = Math.max(radius * 3.4, 12);
-
-      const x = center.x + dist * Math.cos(el) * Math.sin(az);
-      const y = center.y + dist * Math.sin(el);
-      const z = center.z + dist * Math.cos(el) * Math.cos(az);
-
-      keyLight.position.set(x, y, z);
-      keyLight.target.position.copy(center);
-      keyLight.target.updateMatrixWorld();
-
-      // Заполняющий свет всегда на противоположной стороне от основного
-      fillLight.position.set(
-        center.x - dist * 0.8 * Math.cos(el * 0.6) * Math.sin(az + 0.5),
-        center.y + dist * 0.45,
-        center.z - dist * 0.8 * Math.cos(el * 0.6) * Math.cos(az + 0.5)
-      );
-
-      const d = radius * 1.5;
-      keyLight.shadow.camera.left = -d;
-      keyLight.shadow.camera.right = d;
-      keyLight.shadow.camera.top = d;
-      keyLight.shadow.camera.bottom = -d;
-      keyLight.shadow.camera.near = Math.max(0.1, dist - radius * 2.8);
-      keyLight.shadow.camera.far = dist + radius * 3.2;
-      keyLight.shadow.camera.updateProjectionMatrix();
-      keyLight.shadow.needsUpdate = true;
-    }
-
-    updateShadowCameraBounds();
-
-    /* =========================================================================
-       ЗАГРУЗЧИКИ (100% ЛОКАЛЬНАЯ ОБРАБОТКА В ПАМЯТИ БРАУЗЕРА)
-       ========================================================================= */
-    let sharedDracoLoader = null;
-    function getDracoLoader() {
-      if (!HAS_DRACO) return null;
-      if (!sharedDracoLoader) {
-        sharedDracoLoader = new THREE.DRACOLoader();
-        sharedDracoLoader.setDecoderPath(DRACO_DECODER_PATH);
-        // Не вызываем preload() — несжатые .glb не делают сетевых запросов в рантайме
-      }
-      return sharedDracoLoader;
-    }
-
-    function prepareModelMeshes(modelRoot, modelId) {
-      const meshes = [];
-      let unnamedCounter = 1;
-
-      modelRoot.traverse((child) => {
-        if (!child.isMesh) return;
-        child.castShadow = true;
-        child.receiveShadow = true;
-        child.userData.modelId = modelId;
-
-        if (!child.name || !child.name.trim()) {
-          child.name = 'Деталь_' + unnamedCounter++;
-        }
-
-        // Гарантируем независимые материалы и сохраняем их исходные свойства
-        const normalizeMat = (mat) => {
-          const cloned = mat ? mat.clone() : new THREE.MeshStandardMaterial({
-            color: 0xb8c2cc,
-            metalness: 0.2,
-            roughness: 0.45
-          });
-          if ('envMapIntensity' in cloned && (cloned.envMapIntensity === undefined || cloned.envMapIntensity === 0)) {
-            cloned.envMapIntensity = 1.0;
-          }
-          cloned.userData.origState = {
-            transparent: Boolean(cloned.transparent),
-            opacity: cloned.opacity !== undefined ? cloned.opacity : 1.0,
-            depthWrite: cloned.depthWrite !== undefined ? cloned.depthWrite : true,
-            wireframe: Boolean(cloned.wireframe)
-          };
-          return cloned;
-        };
-
-        if (Array.isArray(child.material)) {
-          child.material = child.material.map(normalizeMat);
-        } else {
-          child.material = normalizeMat(child.material);
-        }
-
-        meshes.push(child);
-      });
-
-      return meshes;
-    }
-
-    function computeExplodeData(modelRoot, meshes) {
-      modelRoot.updateMatrixWorld(true);
-      const modelBox = new THREE.Box3().setFromObject(modelRoot);
-      const modelCenterWorld = new THREE.Vector3();
-      modelBox.getCenter(modelCenterWorld);
-      const modelSize = new THREE.Vector3();
-      modelBox.getSize(modelSize);
-      const maxDim = Math.max(modelSize.x, modelSize.y, modelSize.z, 0.5);
-
-      meshes.forEach((mesh) => {
-        mesh.userData.origLocalPos = mesh.position.clone();
-        const meshBox = new THREE.Box3().setFromObject(mesh);
-        const meshCenterWorld = new THREE.Vector3();
-        meshBox.getCenter(meshCenterWorld);
-
-        const dirWorld = meshCenterWorld.sub(modelCenterWorld);
-        const dist = dirWorld.length();
-
-        let offsetWorld = new THREE.Vector3();
-        if (dist > 0.001) {
-          const magnitude = Math.max(dist * 0.9, maxDim * 0.28);
-          offsetWorld.copy(dirWorld).normalize().multiplyScalar(magnitude);
-        }
-
-        // Переводим мировое смещение в локальные координаты родителя меша
-        if (mesh.parent) {
-          mesh.parent.updateMatrixWorld(true);
-          const meshWorldPos = new THREE.Vector3();
-          mesh.getWorldPosition(meshWorldPos);
-          const targetWorldPos = meshWorldPos.clone().add(offsetWorld);
-          const invParent = new THREE.Matrix4().copy(mesh.parent.matrixWorld).invert();
-          const targetLocalPos = targetWorldPos.applyMatrix4(invParent);
-          mesh.userData.explodeLocalOffset = targetLocalPos.sub(mesh.position);
-        } else {
-          mesh.userData.explodeLocalOffset = offsetWorld;
-        }
-      });
-    }
-
-    function rebuildAllMeshesList() {
-      state.allMeshes = [];
-      state.loadedModels.forEach((m) => {
-        m.meshes.forEach((mesh) => state.allMeshes.push(mesh));
-      });
-      dom.statModels.textContent = String(state.loadedModels.length);
-      dom.statMeshes.textContent = String(state.allMeshes.length);
-      dom.countObjects.textContent = String(state.loadedModels.length);
-      dom.emptyOverlay.classList.toggle('hidden', state.loadedModels.length > 0);
-    }
-
-    function registerModel(rawObject, name, format, options = {}) {
-      const preserveCoords = options.preserveCoords !== undefined
-        ? options.preserveCoords
-        : dom.chkPreserveCoords.checked;
-
-      // Оборачиваем в чистый контейнер, чтобы безопасно крутить/двигать/сбрасывать
-      const root = new THREE.Group();
-      root.name = name;
-      root.add(rawObject);
-
-      const id = 'model_' + state.nextModelId++;
-      root.userData.modelId = id;
-
-      const meshes = prepareModelMeshes(root, id);
-      if (meshes.length === 0) {
-        showToast('В файле "' + name + '" не найдено 3D-геометрии', 'warn');
-        return null;
-      }
-
-      // Автопозиционирование и нормализация (если не включён режим сохранения координат сборок)
-      if (!preserveCoords) {
-        root.updateMatrixWorld(true);
-        const rawBox = new THREE.Box3().setFromObject(root);
-        const rawSize = new THREE.Vector3();
-        rawBox.getSize(rawSize);
-        const maxDim = Math.max(rawSize.x, rawSize.y, rawSize.z);
-
-        // Нормализуем только слишком огромные (например FBX в мм) или микроскопические модели
-        if (maxDim > 0 && (maxDim > 18 || maxDim < 0.25)) {
-          const scaleFactor = 3.2 / maxDim;
-          root.scale.multiplyScalar(scaleFactor);
-        }
-
-        root.updateMatrixWorld(true);
-        const scaledBox = new THREE.Box3().setFromObject(root);
-        const scaledCenter = new THREE.Vector3();
-        const scaledSize = new THREE.Vector3();
-        scaledBox.getCenter(scaledCenter);
-        scaledBox.getSize(scaledSize);
-
-        // Ставим на пол Y = 0 и центрируем по Z
-        root.position.y -= scaledBox.min.y;
-        root.position.z -= scaledCenter.z;
-
-        // Сдвигаем по X относительно общего Box3 уже загруженных моделей
-        const existingBox = getSceneBoundingBox(false);
-        if (!existingBox.isEmpty() && !options.skipAutoOffsetX) {
-          const gap = Math.max(0.6, Math.min(scaledSize.x * 0.25, 2.0));
-          const targetMinX = existingBox.max.x + gap;
-          root.position.x += (targetMinX - scaledBox.min.x);
-        } else if (!options.skipAutoOffsetX) {
-          root.position.x -= scaledCenter.x;
-        }
-      }
-
-      scene.add(root);
-      root.updateMatrixWorld(true);
-      computeExplodeData(root, meshes);
-
-      const modelEntry = {
-        id,
-        name,
-        format: format.toUpperCase(),
-        root,
-        meshes,
-        visible: true,
-        expanded: false,
-        initialTransform: {
-          position: root.position.clone(),
-          quaternion: root.quaternion.clone(),
-          scale: root.scale.clone()
-        }
-      };
-
-      state.loadedModels.push(modelEntry);
-      rebuildAllMeshesList();
-      applyMaterialModes();
-      if (state.explodeValue > 0) applyExplodeView(state.explodeValue);
-      updateShadowCameraBounds();
-      renderOutliner();
-
-      return modelEntry;
-    }
-
-    async function handleFilesUpload(fileList) {
-      const files = Array.from(fileList || []);
-      if (!files.length) return;
-
-      const supportedExt = new Set(['glb', 'gltf', 'obj', 'stl', 'fbx']);
-      const modelFiles = [];
-      const blobUrlMap = new Map();
-
-      // Создаём временные Blob URL для всех файлов (поддержка многофайловых .gltf + .bin + текстуры)
-      files.forEach((f) => {
-        const url = URL.createObjectURL(f);
-        blobUrlMap.set(f.name.toLowerCase(), url);
-        const ext = (f.name.split('.').pop() || '').toLowerCase();
-        if (supportedExt.has(ext)) {
-          modelFiles.push({ file: f, ext, url });
-        }
-      });
-
-      if (!modelFiles.length) {
-        blobUrlMap.forEach((u) => URL.revokeObjectURL(u));
-        showToast('Выберите файлы формата .glb, .gltf, .obj, .stl или .fbx', 'warn');
-        return;
-      }
-
-      const manager = new THREE.LoadingManager();
-      manager.setURLModifier((url) => {
-        const cleanName = decodeURIComponent(url.split('/').pop().split('?')[0]).toLowerCase();
-        if (blobUrlMap.has(cleanName)) return blobUrlMap.get(cleanName);
-        return url;
-      });
-
-      setLoading(true, 'Загрузка моделей (' + modelFiles.length + ')...');
-      const newlyAdded = [];
-
-      for (const item of modelFiles) {
-        try {
-          setLoading(true, 'Загрузка: ' + item.file.name);
-          const obj = await loadSingleModelFile(item.file, item.ext, item.url, manager);
-          if (obj) {
-            const entry = registerModel(obj, item.file.name, item.ext);
-            if (entry) newlyAdded.push(entry);
-          }
-        } catch (err) {
-          console.error('Ошибка загрузки ' + item.file.name, err);
-          showToast('Ошибка загрузки ' + item.file.name + ': ' + (err.message || 'повреждённый файл'), 'error');
-        }
-      }
-
-      // Освобождаем временные Blob URL
-      blobUrlMap.forEach((u) => URL.revokeObjectURL(u));
-      setLoading(false);
-
-      if (newlyAdded.length > 0) {
-        selectModels(newlyAdded.map((m) => m.id));
-        if (state.loadedModels.length === newlyAdded.length) {
-          flyToView('iso', false);
-        } else {
-          focusOnSelection();
-        }
-        showToast('Добавлено моделей: ' + newlyAdded.length, 'success');
-      }
-    }
-
-    function loadSingleModelFile(file, ext, blobUrl, manager) {
-      return new Promise((resolve, reject) => {
-        if (ext === 'glb' || ext === 'gltf') {
-          if (!HAS_GLTF) return reject(new Error('GLTFLoader недоступен'));
-          const loader = new THREE.GLTFLoader(manager);
-          const draco = getDracoLoader();
-          if (draco) loader.setDRACOLoader(draco);
-          loader.load(
-            blobUrl,
-            (gltf) => resolve(gltf.scene || (gltf.scenes && gltf.scenes[0])),
-            undefined,
-            (err) => reject(err || new Error('Ошибка чтения GLTF/GLB'))
-          );
-          return;
-        }
-
-        if (ext === 'obj') {
-          if (!HAS_OBJ) return reject(new Error('OBJLoader недоступен'));
-          const loader = new THREE.OBJLoader(manager);
-          loader.load(blobUrl, (obj) => resolve(obj), undefined, reject);
-          return;
-        }
-
-        if (ext === 'stl') {
-          if (!HAS_STL) return reject(new Error('STLLoader недоступен'));
-          const loader = new THREE.STLLoader(manager);
-          loader.load(
-            blobUrl,
-            (geometry) => {
-              if (!geometry.attributes.normal) geometry.computeVertexNormals();
-              const mat = new THREE.MeshStandardMaterial({
-                color: 0xbac4d0,
-                metalness: 0.25,
-                roughness: 0.42
-              });
-              const mesh = new THREE.Mesh(geometry, mat);
-              mesh.name = file.name.replace(/\.stl$/i, '');
-              const group = new THREE.Group();
-              group.add(mesh);
-              resolve(group);
-            },
-            undefined,
-            reject
-          );
-          return;
-        }
-
-        if (ext === 'fbx') {
-          if (!HAS_FBX) return reject(new Error('FBXLoader недоступен'));
-          const loader = new THREE.FBXLoader(manager);
-          loader.load(blobUrl, (fbx) => resolve(fbx), undefined, reject);
-          return;
-        }
-
-        reject(new Error('Неподдерживаемый формат .' + ext));
-      });
-    }
-
-    /* =========================================================================
-       ДЕМО-СБОРКА (ЛОКАЛЬНАЯ ГЕНЕРАЦИЯ ДЛЯ ПРОВЕРКИ PBR, ТЕНЕЙ И ВЗРЫВ-СХЕМЫ)
-       ========================================================================= */
-    function loadDemoAssembly() {
-      const group = new THREE.Group();
-      group.name = 'Демо_Редуктор';
-
-      const matDarkSteel = new THREE.MeshStandardMaterial({ color: 0x3b4454, metalness: 0.72, roughness: 0.32 });
-      const matBrushedAlu = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.85, roughness: 0.24 });
-      const matAnodizedBlue = new THREE.MeshStandardMaterial({ color: 0x2563eb, metalness: 0.55, roughness: 0.28 });
-      const matCopper = new THREE.MeshStandardMaterial({ color: 0xd97742, metalness: 0.88, roughness: 0.26 });
-      const matRubber = new THREE.MeshStandardMaterial({ color: 0x1e242d, metalness: 0.05, roughness: 0.82 });
-
-      // Опорная плита
-      const base = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.22, 2.2), matDarkSteel);
-      base.position.set(0, 0.11, 0);
-      base.name = 'Опорная_плита';
-      group.add(base);
-
-      // Демпферные подушки
-      const padPositions = [[-1.05, 0.04, -0.85], [1.05, 0.04, -0.85], [-1.05, 0.04, 0.85], [1.05, 0.04, 0.85]];
-      padPositions.forEach((p, i) => {
-        const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 0.08, 24), matRubber);
-        pad.position.set(p[0], p[1], p[2]);
-        pad.name = 'Опора_' + (i + 1);
-        group.add(pad);
-      });
-
-      // Корпус редуктора
-      const housing = new THREE.Mesh(new THREE.CylinderGeometry(0.88, 0.96, 1.35, 40), matAnodizedBlue);
-      housing.position.set(0, 0.9, 0);
-      housing.name = 'Корпус_анодированный';
-      group.add(housing);
-
-      // Медное охлаждающее кольцо
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.12, 20, 48), matCopper);
-      ring.rotation.x = Math.PI / 2;
-      ring.position.set(0, 0.92, 0);
-      ring.name = 'Медный_теплоотвод';
-      group.add(ring);
-
-      // Верхний фланец
-      const flange = new THREE.Mesh(new THREE.CylinderGeometry(1.06, 1.06, 0.16, 40), matBrushedAlu);
-      flange.position.set(0, 1.64, 0);
-      flange.name = 'Верхний_фланец';
-      group.add(flange);
-
-      // Центральный роторный вал
-      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 1.1, 32), matBrushedAlu);
-      shaft.position.set(0, 2.15, 0);
-      shaft.name = 'Приводной_вал';
-      group.add(shaft);
-
-      // Головка вала
-      const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.36, 0.22, 6), matDarkSteel);
-      cap.position.set(0, 2.75, 0);
-      cap.name = 'Шестигранная_гайка';
-      group.add(cap);
-
-      // 6 болтов по окружности фланца
-      for (let i = 0; i < 6; i++) {
-        const angle = (i / 6) * Math.PI * 2;
-        const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.18, 6), matDarkSteel);
-        bolt.position.set(Math.cos(angle) * 0.86, 1.78, Math.sin(angle) * 0.86);
-        bolt.name = 'Болт_М12_' + (i + 1);
-        group.add(bolt);
-      }
-
-      const entry = registerModel(group, 'Демо_Редуктор.glb', 'DEMO');
-      if (entry) {
-        entry.expanded = true;
-        selectModels([entry.id]);
-        if (state.loadedModels.length === 1) flyToView('iso', false);
-        else focusOnSelection();
-        showToast('Демо-сборка добавлена в сцену', 'success');
-      }
-    }
-
-    /* =========================================================================
-       ВЫДЕЛЕНИЕ, МУЛЬТИ-PIVOT И TRANSFORMCONTROLS
-       ========================================================================= */
-    function getModelById(id) {
-      return state.loadedModels.find((m) => m.id === id) || null;
-    }
-
-    function detachMultiPivot() {
-      if (transformControls) transformControls.detach();
-      while (multiPivot.children.length > 0) {
-        const child = multiPivot.children[0];
-        scene.attach(child);
-      }
-      multiPivot.position.set(0, 0, 0);
-      multiPivot.rotation.set(0, 0, 0);
-      multiPivot.scale.set(1, 1, 1);
-      multiPivot.updateMatrixWorld(true);
-    }
-
-    function attachGizmoToSelection() {
-      detachMultiPivot();
-
-      const selected = Array.from(state.selectedModelIds)
-        .map(getModelById)
-        .filter((m) => m && m.visible);
-
-      if (selected.length === 0) {
-        updateSelectionHelper();
-        updateTransformReadout();
-        return;
-      }
-
-      if (selected.length === 1) {
-        if (transformControls) transformControls.attach(selected[0].root);
-      } else {
-        // Вычисляем общий центр группы и временно объединяем модели в multiPivot
-        const box = new THREE.Box3();
-        selected.forEach((m) => {
-          m.root.updateMatrixWorld(true);
-          box.expandByObject(m.root);
-        });
-        const center = new THREE.Vector3();
-        box.getCenter(center);
-
-        multiPivot.position.copy(center);
-        multiPivot.rotation.set(0, 0, 0);
-        multiPivot.scale.set(1, 1, 1);
-        multiPivot.updateMatrixWorld(true);
-
-        selected.forEach((m) => multiPivot.attach(m.root));
-        if (transformControls) transformControls.attach(multiPivot);
-      }
-
-      updateSelectionHelper();
-      updateTransformReadout();
-    }
-
-    function updateSelectionHelper() {
-      selectionBox3.makeEmpty();
-
-      if (state.selectedSubMesh && state.selectedSubMesh.visible) {
-        state.selectedSubMesh.updateMatrixWorld(true);
-        selectionBox3.setFromObject(state.selectedSubMesh);
-      } else {
-        state.selectedModelIds.forEach((id) => {
-          const m = getModelById(id);
-          if (m && m.visible) {
-            m.root.updateMatrixWorld(true);
-            selectionBox3.expandByObject(m.root);
-          }
-        });
-      }
-
-      selectionBoxHelper.visible = !selectionBox3.isEmpty();
-      if (selectionBoxHelper.visible) {
-        selectionBoxHelper.updateMatrixWorld(true);
-      }
-    }
-
-    function updateTransformReadout() {
-      const count = state.selectedModelIds.size;
-      dom.selectedCounter.textContent = 'Выделено: ' + count;
-      dom.multiActionsBar.style.display = count > 0 ? 'flex' : 'none';
-      dom.transformInfoCard.style.display = count > 0 ? 'flex' : 'none';
-
-      if (count === 0) return;
-
-      const targetObj = count === 1
-        ? (getModelById(Array.from(state.selectedModelIds)[0])?.root || null)
-        : multiPivot;
-
-      if (!targetObj) return;
-
-      if (state.gizmoMode === 'translate') {
-        dom.gizmoModeLabel.textContent = 'Перемещение (м)';
-        dom.valTx.textContent = targetObj.position.x.toFixed(2);
-        dom.valTy.textContent = targetObj.position.y.toFixed(2);
-        dom.valTz.textContent = targetObj.position.z.toFixed(2);
-      } else if (state.gizmoMode === 'rotate') {
-        dom.gizmoModeLabel.textContent = 'Вращение (°)';
-        dom.valTx.textContent = THREE.MathUtils.radToDeg(targetObj.rotation.x).toFixed(1);
-        dom.valTy.textContent = THREE.MathUtils.radToDeg(targetObj.rotation.y).toFixed(1);
-        dom.valTz.textContent = THREE.MathUtils.radToDeg(targetObj.rotation.z).toFixed(1);
-      } else {
-        dom.gizmoModeLabel.textContent = 'Масштаб (×)';
-        dom.valTx.textContent = targetObj.scale.x.toFixed(2);
-        dom.valTy.textContent = targetObj.scale.y.toFixed(2);
-        dom.valTz.textContent = targetObj.scale.z.toFixed(2);
-      }
-    }
-
-    function selectModels(ids, additive = false) {
-      state.selectedSubMesh = null;
-      if (!additive) state.selectedModelIds.clear();
-      ids.forEach((id) => {
-        if (getModelById(id)) {
-          if (additive && state.selectedModelIds.has(id)) {
-            state.selectedModelIds.delete(id);
-          } else {
-            state.selectedModelIds.add(id);
-          }
-        }
-      });
-      attachGizmoToSelection();
-      if (state.xrayEnabled) applyMaterialModes();
-      if (state.explodeValue > 0) applyExplodeView(state.explodeValue);
-      renderOutliner();
-    }
-
-    function clearSelection() {
-      state.selectedModelIds.clear();
-      state.selectedSubMesh = null;
-      detachMultiPivot();
-      updateSelectionHelper();
-      updateTransformReadout();
-      if (state.xrayEnabled) applyMaterialModes();
-      if (state.explodeValue > 0) applyExplodeView(state.explodeValue);
-      renderOutliner();
-    }
-
-    function setGizmoMode(mode) {
-      state.gizmoMode = mode;
-      if (transformControls) transformControls.setMode(mode);
-      dom.btnGizmoTranslate.classList.toggle('btn-active', mode === 'translate');
-      dom.btnGizmoRotate.classList.toggle('btn-active', mode === 'rotate');
-      dom.btnGizmoScale.classList.toggle('btn-active', mode === 'scale');
-      updateTransformReadout();
-    }
-
-    function updateGizmoSnapping() {
-      if (!transformControls) return;
-      if (state.isShiftDown) {
-        transformControls.setTranslationSnap(0.25);
-        transformControls.setRotationSnap(THREE.MathUtils.degToRad(15));
-        transformControls.setScaleSnap(0.1);
-      } else {
-        transformControls.setTranslationSnap(null);
-        transformControls.setRotationSnap(null);
-        transformControls.setScaleSnap(null);
-      }
-    }
-
-    /* =========================================================================
-       ИСТОРИЯ ОТМЕНЫ ТРАНСФОРМАЦИЙ (CTRL+Z)
-       ========================================================================= */
-    function captureModelsSnapshot(modelIds) {
-      const snap = [];
-      modelIds.forEach((id) => {
-        const m = getModelById(id);
-        if (!m) return;
-        m.root.updateMatrixWorld(true);
-        const pos = new THREE.Vector3();
-        const quat = new THREE.Quaternion();
-        const scl = new THREE.Vector3();
-        m.root.matrixWorld.decompose(pos, quat, scl);
-        snap.push({ id: m.id, pos, quat, scl });
-      });
-      return snap;
-    }
-
-    function captureSelectedTransformsSnapshot() {
-      return captureModelsSnapshot(Array.from(state.selectedModelIds));
-    }
-
-    function pushUndoSnapshot(snapshot, label = 'Трансформация') {
-      if (!snapshot || !snapshot.length) return;
-      state.undoStack.push({ snapshot, label });
-      if (state.undoStack.length > 40) state.undoStack.shift();
-      dom.btnUndo.disabled = state.undoStack.length === 0;
-    }
-
-    function performUndo() {
-      if (!state.undoStack.length) {
-        showToast('Нет действий для отмены', 'info');
-        return;
-      }
-      const entry = state.undoStack.pop();
-      dom.btnUndo.disabled = state.undoStack.length === 0;
-
-      detachMultiPivot();
-      entry.snapshot.forEach((item) => {
-        const m = getModelById(item.id);
-        if (!m) return;
-        m.root.position.copy(item.pos);
-        m.root.quaternion.copy(item.quat);
-        m.root.scale.copy(item.scl);
-        m.root.updateMatrixWorld(true);
-      });
-
-      attachGizmoToSelection();
-      updateShadowCameraBounds();
-      showToast('Отменено: ' + entry.label, 'info');
-    }
-
-    /* =========================================================================
-       ОПЕРАЦИИ НАД МОДЕЛЯМИ (ПОЛ Y=0, ДУБЛИРОВАНИЕ, СБРОС, УДАЛЕНИЕ)
-       ========================================================================= */
-    function dropModelsToFloor(ids) {
-      const targetIds = ids.filter((id) => getModelById(id));
-      if (!targetIds.length) return;
-
-      pushUndoSnapshot(captureModelsSnapshot(targetIds), 'Поставить на пол');
-      detachMultiPivot();
-
-      targetIds.forEach((id) => {
-        const m = getModelById(id);
-        m.root.updateMatrixWorld(true);
-        const box = new THREE.Box3().setFromObject(m.root);
-        if (!box.isEmpty()) {
-          m.root.position.y -= box.min.y;
-          m.root.updateMatrixWorld(true);
-        }
-      });
-
-      attachGizmoToSelection();
-      updateShadowCameraBounds();
-      showToast('Модели поставлены на уровень пола (Y = 0)', 'success');
-    }
-
-    function resetModelsTransform(ids) {
-      const targetIds = ids.filter((id) => getModelById(id));
-      if (!targetIds.length) return;
-
-      pushUndoSnapshot(captureModelsSnapshot(targetIds), 'Сброс трансформации');
-      detachMultiPivot();
-
-      targetIds.forEach((id) => {
-        const m = getModelById(id);
-        m.root.position.copy(m.initialTransform.position);
-        m.root.quaternion.copy(m.initialTransform.quaternion);
-        m.root.scale.copy(m.initialTransform.scale);
-        m.root.updateMatrixWorld(true);
-      });
-
-      attachGizmoToSelection();
-      updateShadowCameraBounds();
-      showToast('Трансформации сброшены', 'info');
-    }
-
-    function toggleModelVisibility(id) {
-      const m = getModelById(id);
-      if (!m) return;
-      detachMultiPivot();
-      m.visible = !m.visible;
-      m.root.visible = m.visible;
-      attachGizmoToSelection();
-      updateShadowCameraBounds();
-      renderOutliner();
-    }
-
-    function duplicateModel(id) {
-      const source = getModelById(id);
-      if (!source) return;
-
-      detachMultiPivot();
-      source.root.updateMatrixWorld(true);
-
-      const prevExplode = state.explodeValue;
-      if (prevExplode > 0) applyExplodeView(0);
-
-      const cloneGroup = new THREE.Group();
-      source.root.children.forEach((child) => cloneGroup.add(child.clone(true)));
-
-      const newId = 'model_' + state.nextModelId++;
-      const copyRoot = new THREE.Group();
-      copyRoot.name = source.name + ' (копия)';
-      copyRoot.userData.modelId = newId;
-      copyRoot.add(cloneGroup);
-
-      copyRoot.position.copy(source.root.position);
-      copyRoot.quaternion.copy(source.root.quaternion);
-      copyRoot.scale.copy(source.root.scale);
-
-      const srcBox = new THREE.Box3().setFromObject(source.root);
-      const srcSize = new THREE.Vector3();
-      srcBox.getSize(srcSize);
-      copyRoot.position.x += Math.max(srcSize.x * 1.15, 0.8);
-
-      const meshes = prepareModelMeshes(copyRoot, newId);
-      scene.add(copyRoot);
-      copyRoot.updateMatrixWorld(true);
-      computeExplodeData(copyRoot, meshes);
-
-      const newEntry = {
-        id: newId,
-        name: copyRoot.name,
-        format: source.format,
-        root: copyRoot,
-        meshes,
-        visible: true,
-        expanded: false,
-        initialTransform: {
-          position: copyRoot.position.clone(),
-          quaternion: copyRoot.quaternion.clone(),
-          scale: copyRoot.scale.clone()
-        }
-      };
-
-      state.loadedModels.push(newEntry);
-      rebuildAllMeshesList();
-      if (prevExplode > 0) applyExplodeView(prevExplode);
-      applyMaterialModes();
-      selectModels([newId]);
-      updateShadowCameraBounds();
-      showToast('Создана копия: ' + source.name, 'success');
-    }
-
-    function disposeObject3D(root) {
-      root.traverse((obj) => {
-        if (obj.isMesh) {
-          if (obj.geometry) obj.geometry.dispose();
+    function applyShadowsEnabled(enabled) {
+      lightState.shadows = enabled;
+      renderer.shadowMap.enabled = enabled;
+      sunLight.castShadow = enabled;
+      dom.btnShadows.classList.toggle('on', enabled);
+      dom.btnShadows.setAttribute('aria-checked', String(enabled));
+
+      modelGroup.traverse((obj) => {
+        if (obj.isMesh && obj.material) {
           const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-          mats.forEach((mat) => {
-            if (!mat) return;
-            for (const key in mat) {
-              const val = mat[key];
-              if (val && val.isTexture) val.dispose();
-            }
-            mat.dispose();
-          });
+          mats.forEach((m) => { if (m) m.needsUpdate = true; });
         }
       });
     }
 
-    function deleteModel(id) {
-      const idx = state.loadedModels.findIndex((m) => m.id === id);
-      if (idx === -1) return;
+    function syncLightingUI() {
+      dom.sliderExposure.value = String(lightState.exposure);
+      dom.valExposure.textContent = lightState.exposure.toFixed(2);
+      renderer.toneMappingExposure = lightState.exposure;
 
-      detachMultiPivot();
-      const [removed] = state.loadedModels.splice(idx, 1);
-      scene.remove(removed.root);
-      disposeObject3D(removed.root);
+      dom.sliderSunIntensity.value = String(lightState.sunIntensity);
+      dom.valSunIntensity.textContent = lightState.sunIntensity.toFixed(2);
+      sunLight.intensity = lightState.sunIntensity;
 
-      state.selectedModelIds.delete(id);
-      if (state.selectedSubMesh && state.selectedSubMesh.userData.modelId === id) {
-        state.selectedSubMesh = null;
-      }
+      dom.sliderSunAzimuth.value = String(lightState.sunAzimuth);
+      dom.valSunAzimuth.textContent = lightState.sunAzimuth + '°';
 
-      rebuildAllMeshesList();
-      attachGizmoToSelection();
-      updateShadowCameraBounds();
-      renderOutliner();
-      showToast('Удалена модель: ' + removed.name, 'info');
+      dom.sliderSunElevation.value = String(lightState.sunElevation);
+      dom.valSunElevation.textContent = lightState.sunElevation + '°';
+
+      dom.sliderFill.value = String(lightState.fillIntensity);
+      dom.valFill.textContent = lightState.fillIntensity.toFixed(2);
+      applyFillLight(lightState.fillIntensity);
+
+      applyShadowsEnabled(lightState.shadows);
+      applyBackground(lightState.bgMode);
+      updateSunAndShadowBounds();
     }
 
-    /* =========================================================================
-       МАТЕРИАЛЫ: WIREFRAME И X-RAY (РЕНТГЕН), ВЗРЫВ-СХЕМА
-       ========================================================================= */
-    function applyMaterialModes(forceNormal = false) {
-      const hasSelection = state.selectedModelIds.size > 0;
-
-      state.loadedModels.forEach((m) => {
-        const applyXrayToModel = !forceNormal && state.xrayEnabled && (!hasSelection || state.selectedModelIds.has(m.id));
-        const applyWireToModel = !forceNormal && state.wireframeEnabled;
-
-        m.meshes.forEach((mesh) => {
-          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-          mats.forEach((mat) => {
-            if (!mat || !mat.userData.origState) return;
-            const orig = mat.userData.origState;
-            mat.wireframe = applyWireToModel ? true : orig.wireframe;
-
-            if (applyXrayToModel) {
-              mat.transparent = true;
-              mat.opacity = 0.24;
-              mat.depthWrite = false;
-            } else {
-              mat.transparent = orig.transparent;
-              mat.opacity = orig.opacity;
-              mat.depthWrite = orig.depthWrite;
-            }
-            mat.needsUpdate = true;
-          });
-        });
-      });
-    }
-
-    function applyExplodeView(percent) {
-      state.explodeValue = percent;
-      dom.valExplode.textContent = percent + '%';
-      dom.sliderExplode.value = String(percent);
-
-      const factor = (percent / 100) * 1.8;
-      const hasSelection = state.selectedModelIds.size > 0;
-
-      state.loadedModels.forEach((m) => {
-        const active = !hasSelection || state.selectedModelIds.has(m.id);
-        const f = active ? factor : 0;
-        m.meshes.forEach((mesh) => {
-          if (!mesh.userData.origLocalPos || !mesh.userData.explodeLocalOffset) return;
-          mesh.position
-            .copy(mesh.userData.origLocalPos)
-            .addScaledVector(mesh.userData.explodeLocalOffset, f);
-        });
-      });
-
-      updateSelectionHelper();
-      updateShadowCameraBounds();
-    }
-
-    /* =========================================================================
-       НАВИГАЦИЯ КАМЕРЫ (GSAP, ВИДЫ 1–6, RAYCASTER FOCUS, ЗАКЛАДКИ, WASD/QE)
-       ========================================================================= */
-    function killCameraAnimations() {
-      if (HAS_GSAP) {
-        gsap.killTweensOf(camera.position);
-        if (controls) gsap.killTweensOf(controls.target);
-      }
-    }
-
-    function animateCameraTo(targetPos, targetLookAt, duration = 0.65) {
-      killCameraAnimations();
-      if (HAS_GSAP && duration > 0) {
-        gsap.to(camera.position, {
-          x: targetPos.x,
-          y: targetPos.y,
-          z: targetPos.z,
-          duration,
-          ease: 'power2.out'
-        });
-        if (controls) {
-          gsap.to(controls.target, {
-            x: targetLookAt.x,
-            y: targetLookAt.y,
-            z: targetLookAt.z,
-            duration,
-            ease: 'power2.out',
-            onUpdate: () => controls.update()
-          });
-        }
-      } else {
-        camera.position.copy(targetPos);
-        if (controls) {
-          controls.target.copy(targetLookAt);
-          controls.update();
-        } else {
-          camera.lookAt(targetLookAt);
-        }
-      }
-    }
-
-    function getTargetBoundingBox(preferSelection = true) {
-      const box = new THREE.Box3();
-      if (preferSelection && state.selectedSubMesh && state.selectedSubMesh.visible) {
-        state.selectedSubMesh.updateMatrixWorld(true);
-        box.setFromObject(state.selectedSubMesh);
-        if (!box.isEmpty()) return box;
-      }
-      if (preferSelection && state.selectedModelIds.size > 0) {
-        state.selectedModelIds.forEach((id) => {
-          const m = getModelById(id);
-          if (m && m.visible) {
-            m.root.updateMatrixWorld(true);
-            box.expandByObject(m.root);
-          }
-        });
-        if (!box.isEmpty()) return box;
-      }
-      return getSceneBoundingBox(true);
-    }
-
-    function computeFitDistance(box) {
-      const sphere = new THREE.Sphere();
-      box.getBoundingSphere(sphere);
-      const radius = Math.max(sphere.radius, 0.5);
-      const fov = THREE.MathUtils.degToRad(camera.fov);
-      return (radius / Math.sin(fov / 2)) * 1.18;
-    }
-
-    function flyToView(viewKey, preferSelection = true) {
-      const box = getTargetBoundingBox(preferSelection);
-      const center = new THREE.Vector3(0, 0.8, 0);
-      let dist = 8;
-
-      if (!box.isEmpty()) {
-        box.getCenter(center);
-        dist = computeFitDistance(box);
-      }
-
-      const dirs = {
-        iso: new THREE.Vector3(1, 0.78, 1).normalize(),
-        front: new THREE.Vector3(0, 0.08, 1).normalize(),
-        back: new THREE.Vector3(0, 0.08, -1).normalize(),
-        left: new THREE.Vector3(-1, 0.08, 0).normalize(),
-        right: new THREE.Vector3(1, 0.08, 0).normalize(),
-        top: new THREE.Vector3(0, 1, 0.001).normalize()
-      };
-
-      const dir = dirs[viewKey] || dirs.iso;
-      const newPos = center.clone().addScaledVector(dir, dist);
-      animateCameraTo(newPos, center, 0.65);
-    }
-
-    function focusOnObject(object3D) {
-      if (!object3D) return;
-      object3D.updateMatrixWorld(true);
-      const box = new THREE.Box3().setFromObject(object3D);
-      if (box.isEmpty()) return;
-
-      const center = new THREE.Vector3();
-      box.getCenter(center);
-      const dist = computeFitDistance(box);
-
-      const currentDir = camera.position.clone().sub(controls ? controls.target : new THREE.Vector3());
-      if (currentDir.lengthSq() < 0.0001) currentDir.set(1, 0.75, 1);
-      currentDir.normalize();
-
-      const newPos = center.clone().addScaledVector(currentDir, dist);
-      animateCameraTo(newPos, center, 0.6);
-    }
-
-    function focusOnSelection() {
-      if (state.selectedSubMesh) {
-        focusOnObject(state.selectedSubMesh);
-        return;
-      }
-      const box = getTargetBoundingBox(true);
-      if (box.isEmpty()) {
-        flyToView('iso', false);
-        return;
-      }
-      const center = new THREE.Vector3();
-      box.getCenter(center);
-      const dist = computeFitDistance(box);
-      const currentDir = camera.position.clone().sub(controls ? controls.target : new THREE.Vector3());
-      if (currentDir.lengthSq() < 0.0001) currentDir.set(1, 0.75, 1);
-      currentDir.normalize();
-      animateCameraTo(center.clone().addScaledVector(currentDir, dist), center, 0.6);
-    }
-
-    // Закладки ракурсов
-    function saveBookmark() {
-      const rawName = dom.bookmarkNameInput.value.trim();
-      const name = rawName || ('Ракурс #' + state.nextBookmarkId);
-      state.bookmarks.push({
-        id: 'bm_' + state.nextBookmarkId++,
-        name,
-        pos: camera.position.clone(),
-        target: controls ? controls.target.clone() : new THREE.Vector3()
-      });
-      dom.bookmarkNameInput.value = '';
-      renderBookmarks();
-      showToast('Ракурс сохранён: ' + name, 'success');
-    }
-
-    function renderBookmarks() {
-      dom.countBookmarks.textContent = String(state.bookmarks.length);
-      if (!state.bookmarks.length) {
-        dom.bookmarksList.innerHTML = '<div class="muted-empty">Нажмите «Сохранить», чтобы запомнить текущую позицию камеры.</div>';
-        return;
-      }
-      dom.bookmarksList.innerHTML = '';
-      state.bookmarks.forEach((bm) => {
-        const row = document.createElement('div');
-        row.className = 'bookmark-item';
-
-        const icon = document.createElement('span');
-        icon.innerHTML = '<svg class="ico" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
-
-        const lbl = document.createElement('span');
-        lbl.className = 'bookmark-label';
-        lbl.textContent = bm.name;
-
-        const delBtn = document.createElement('button');
-        delBtn.className = 'btn btn-xs btn-danger';
-        delBtn.title = 'Удалить ракурс';
-        delBtn.innerHTML = '<svg class="ico" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-        delBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          state.bookmarks = state.bookmarks.filter((b) => b.id !== bm.id);
-          renderBookmarks();
-        });
-
-        row.addEventListener('click', () => {
-          animateCameraTo(bm.pos, bm.target, 0.7);
-        });
-
-        row.append(icon, lbl, delBtn);
-        dom.bookmarksList.appendChild(row);
-      });
-    }
-
-    /* =========================================================================
-       OUTLINER (ДЕРЕВО ОБЪЕКТОВ СЦЕНЫ)
-       ========================================================================= */
-    function renderOutliner() {
-      if (!state.loadedModels.length) {
-        dom.outlinerList.innerHTML = '<div class="muted-empty">Сцена пуста. Загрузите 3D-модель или откройте демо-сборку.</div>';
-        return;
-      }
-
-      dom.outlinerList.innerHTML = '';
-      state.loadedModels.forEach((model) => {
-        const isSelected = state.selectedModelIds.has(model.id);
-        const card = document.createElement('div');
-        card.className = 'model-item' + (isSelected ? ' selected' : '');
-
-        // Шапка модели
-        const header = document.createElement('div');
-        header.className = 'model-header';
-
-        const expBtn = document.createElement('button');
-        expBtn.className = 'expand-btn' + (model.expanded ? ' open' : '');
-        expBtn.title = 'Показать вложенные детали';
-        expBtn.innerHTML = '<svg class="ico" style="width:12px;height:12px" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>';
-        expBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          model.expanded = !model.expanded;
-          renderOutliner();
-        });
-
-        const visBtn = document.createElement('button');
-        visBtn.className = 'btn btn-xs' + (model.visible ? '' : ' btn-danger');
-        visBtn.title = model.visible ? 'Скрыть модель' : 'Показать модель';
-        visBtn.innerHTML = model.visible
-          ? '<svg class="ico" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'
-          : '<svg class="ico" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
-        visBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          toggleModelVisibility(model.id);
-        });
-
-        const nameEl = document.createElement('span');
-        nameEl.className = 'model-name';
-        nameEl.textContent = model.name;
-        nameEl.title = model.name;
-        if (!model.visible) nameEl.style.opacity = '0.45';
-
-        const metaEl = document.createElement('span');
-        metaEl.className = 'model-meta';
-        metaEl.textContent = model.format + ' · ' + model.meshes.length;
-
-        header.addEventListener('click', (e) => {
-          const additive = e.ctrlKey || e.metaKey;
-          selectModels([model.id], additive);
-        });
-
-        header.append(expBtn, visBtn, nameEl, metaEl);
-        card.appendChild(header);
-
-        // Быстрые кнопки управления конкретной моделью
-        const actions = document.createElement('div');
-        actions.className = 'model-actions';
-
-        const mkAction = (title, svgHtml, cls, handler) => {
-          const b = document.createElement('button');
-          b.className = 'btn btn-xs ' + cls;
-          b.title = title;
-          b.innerHTML = svgHtml;
-          b.addEventListener('click', (e) => {
-            e.stopPropagation();
-            handler();
-          });
-          return b;
-        };
-
-        actions.append(
-          mkAction(
-            'Фокус на модели',
-            '<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/></svg>',
-            '',
-            () => { selectModels([model.id]); focusOnObject(model.root); }
-          ),
-          mkAction(
-            'Поставить на пол (Y = 0)',
-            '<svg class="ico" viewBox="0 0 24 24"><line x1="12" y1="3" x2="12" y2="17"/><polyline points="7 12 12 17 17 12"/><line x1="4" y1="21" x2="20" y2="21"/></svg>',
-            '',
-            () => dropModelsToFloor([model.id])
-          ),
-          mkAction(
-            'Дублировать модель',
-            '<svg class="ico" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
-            '',
-            () => duplicateModel(model.id)
-          ),
-          mkAction(
-            'Сбросить трансформации',
-            '<svg class="ico" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',
-            '',
-            () => resetModelsTransform([model.id])
-          ),
-          mkAction(
-            'Удалить модель',
-            '<svg class="ico" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>',
-            'btn-danger',
-            () => deleteModel(model.id)
-          )
-        );
-        card.appendChild(actions);
-
-        // Вложенные меши / детали
-        if (model.expanded) {
-          const childrenBox = document.createElement('div');
-          childrenBox.className = 'model-children open';
-
-          model.meshes.forEach((mesh) => {
-            const sub = document.createElement('div');
-            sub.className = 'submesh-row' + (state.selectedSubMesh === mesh ? ' active' : '');
-
-            const dot = document.createElement('span');
-            dot.innerHTML = '<svg class="ico" style="width:11px;height:11px" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/></svg>';
-
-            const subName = document.createElement('span');
-            subName.className = 'submesh-name';
-            subName.textContent = mesh.name;
-            subName.title = mesh.name;
-
-            sub.addEventListener('click', (e) => {
-              e.stopPropagation();
-              selectModels([model.id], false);
-              state.selectedSubMesh = mesh;
-              updateSelectionHelper();
-              renderOutliner();
-            });
-
-            sub.addEventListener('dblclick', (e) => {
-              e.stopPropagation();
-              state.selectedSubMesh = mesh;
-              updateSelectionHelper();
-              focusOnObject(mesh);
-            });
-
-            sub.append(dot, subName);
-            childrenBox.appendChild(sub);
-          });
-
-          card.appendChild(childrenBox);
-        }
-
-        dom.outlinerList.appendChild(card);
-      });
-    }
-
-    /* =========================================================================
-       ЧЕРТЕЖИ (ЛОКАЛЬНАЯ ВКЛАДКА В ПРАВОЙ ПАНЕЛИ)
-       ========================================================================= */
-    function addBlueprints(fileList) {
-      const files = Array.from(fileList || []);
-      if (!files.length) return;
-
-      files.forEach((file) => {
-        const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
-        const isImg = file.type.startsWith('image/');
-        if (!isPdf && !isImg) return;
-
-        const url = URL.createObjectURL(file);
-        state.blueprints.push({
-          id: 'bp_' + state.nextBlueprintId++,
-          name: file.name,
-          isPdf,
-          url
-        });
-      });
-
-      renderBlueprints();
-    }
-
-    function openBlueprintModal(bp) {
-      dom.bpModalTitle.textContent = bp.name;
-      dom.bpModalBody.innerHTML = '';
-      state.bpZoom = 1;
-
-      if (bp.isPdf) {
-        const iframe = document.createElement('iframe');
-        iframe.src = bp.url;
-        dom.bpModalBody.appendChild(iframe);
-      } else {
-        const img = document.createElement('img');
-        img.src = bp.url;
-        img.alt = bp.name;
-        img.id = 'bp-modal-img';
-        dom.bpModalBody.appendChild(img);
-      }
-
-      dom.bpModal.classList.add('open');
-    }
-
-    function setBlueprintZoom(scale) {
-      state.bpZoom = Math.max(0.4, Math.min(4, scale));
-      const img = document.getElementById('bp-modal-img');
-      if (img) img.style.transform = 'scale(' + state.bpZoom.toFixed(2) + ')';
-    }
-
-    function renderBlueprints() {
-      dom.countBlueprints.textContent = String(state.blueprints.length);
-      if (!state.blueprints.length) {
-        dom.blueprintsContainer.innerHTML = '<div class="muted-empty">Чертежи ещё не прикреплены.</div>';
-        return;
-      }
-
-      const grid = document.createElement('div');
-      grid.className = 'bp-grid';
-
-      state.blueprints.forEach((bp) => {
-        const card = document.createElement('div');
-        card.className = 'bp-card';
-
-        const thumb = document.createElement('div');
-        thumb.className = 'bp-thumb';
-        thumb.title = 'Открыть чертёж';
-        if (bp.isPdf) {
-          thumb.innerHTML = '<span class="bp-pdf-badge">PDF</span>';
-        } else {
-          const img = document.createElement('img');
-          img.src = bp.url;
-          img.alt = bp.name;
-          thumb.appendChild(img);
-        }
-        thumb.addEventListener('click', () => openBlueprintModal(bp));
-
-        const foot = document.createElement('div');
-        foot.className = 'bp-foot';
-
-        const name = document.createElement('span');
-        name.className = 'bp-name';
-        name.textContent = bp.name;
-        name.title = bp.name;
-
-        const del = document.createElement('button');
-        del.className = 'btn btn-xs btn-danger';
-        del.title = 'Удалить чертёж';
-        del.innerHTML = '<svg class="ico" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-        del.addEventListener('click', () => {
-          URL.revokeObjectURL(bp.url);
-          state.blueprints = state.blueprints.filter((x) => x.id !== bp.id);
-          renderBlueprints();
-        });
-
-        foot.append(name, del);
-        card.append(thumb, foot);
-        grid.appendChild(card);
-      });
-
-      dom.blueprintsContainer.innerHTML = '';
-      dom.blueprintsContainer.appendChild(grid);
-    }
-
-    /* =========================================================================
-       СНИМОК PNG (БЕЗ preserveDrawingBuffer) И ЭКСПОРТ СЦЕНЫ В .GLB
-       ========================================================================= */
-    function takeScreenshotPNG() {
-      const prevHelperVis = selectionBoxHelper.visible;
-      const prevGizmoVis = transformControls ? transformControls.visible : false;
-
-      selectionBoxHelper.visible = false;
-      if (transformControls) transformControls.visible = false;
-
-      renderer.render(scene, camera);
-      const dataUrl = renderer.domElement.toDataURL('image/png');
-
-      selectionBoxHelper.visible = prevHelperVis;
-      if (transformControls) transformControls.visible = prevGizmoVis;
-      renderer.render(scene, camera);
-
-      const link = document.createElement('a');
-      link.download = 'scene_snapshot_' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.png';
-      link.href = dataUrl;
-      link.click();
-      showToast('Снимок PNG сохранён', 'success');
-    }
-
-    function exportSceneGLB() {
-      if (!HAS_EXPORTER) {
-        showToast('GLTFExporter недоступен', 'error');
-        return;
-      }
-
-      const visibleModels = state.loadedModels.filter((m) => m.visible);
-      if (!visibleModels.length) {
-        showToast('В сцене нет видимых моделей для экспорта', 'warn');
-        return;
-      }
-
-      setLoading(true, 'Сборка и экспорт .GLB...');
-
-      const prevSelected = Array.from(state.selectedModelIds);
-      detachMultiPivot();
-      applyMaterialModes(true);
-
-      const exportGroup = new THREE.Group();
-      exportGroup.name = 'ExportedScene';
-      visibleModels.forEach((m) => {
-        m.root.updateMatrixWorld(true);
-        exportGroup.add(m.root.clone(true));
-      });
-
-      applyMaterialModes(false);
-      if (prevSelected.length) attachGizmoToSelection();
-
-      const exporter = new THREE.GLTFExporter();
-      const onDone = (result) => {
-        setLoading(false);
-        const blob = result instanceof ArrayBuffer
-          ? new Blob([result], { type: 'model/gltf-binary' })
-          : new Blob([JSON.stringify(result)], { type: 'application/json' });
-        const ext = result instanceof ArrayBuffer ? '.glb' : '.gltf';
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'assembled_scene_' + new Date().toISOString().slice(0, 10) + ext;
-        link.click();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-        showToast('Сцена экспортирована в ' + ext.toUpperCase(), 'success');
-      };
-
-      const onErr = (err) => {
-        setLoading(false);
-        console.error('Ошибка GLB-экспорта:', err);
-        showToast('Ошибка экспорта сцены', 'error');
-      };
-
-      try {
-        if (exporter.parse.length >= 4) {
-          exporter.parse(exportGroup, onDone, onErr, { binary: true });
-        } else {
-          exporter.parse(exportGroup, onDone, { binary: true });
-        }
-      } catch (err) {
-        onErr(err);
-      }
-    }
-
-    /* =========================================================================
-       СБРОС СВЕТА И ПОЛНЫЙ СБРОС ПАРАМЕТРОВ
-       ========================================================================= */
-    function resetLighting() {
-      state.exposure = 0.98;
-      state.sunAzimuth = 42;
-      state.sunElevation = 52;
-      state.shadowOpacity = 0.25;
-      state.shadowsEnabled = true;
-      state.gridEnabled = true;
-
-      renderer.toneMappingExposure = state.exposure;
-      renderer.shadowMap.enabled = true;
-      keyLight.castShadow = true;
-      shadowFloor.visible = true;
-      shadowFloorMat.opacity = state.shadowOpacity;
-
-      dom.sliderExposure.value = String(state.exposure);
-      dom.valExposure.textContent = state.exposure.toFixed(2);
-      dom.sliderAzimuth.value = String(state.sunAzimuth);
-      dom.valAzimuth.textContent = state.sunAzimuth + '°';
-      dom.sliderElevation.value = String(state.sunElevation);
-      dom.valElevation.textContent = state.sunElevation + '°';
-      dom.sliderShadowOpacity.value = String(state.shadowOpacity);
-      dom.valShadowOpacity.textContent = state.shadowOpacity.toFixed(2);
-
-      dom.btnToggleShadows.classList.add('btn-active');
-      dom.btnToggleShadows.querySelector('span').textContent = 'Тени: ВКЛ';
-      dom.btnToggleGrid.classList.add('btn-active');
-      dom.btnToggleGrid.querySelector('span').textContent = 'Сетка: ВКЛ';
-
-      applyBackground('dark');
-      updateShadowCameraBounds();
-    }
-
-    function resetAll() {
-      resetLighting();
-      state.wireframeEnabled = false;
-      state.xrayEnabled = false;
-      state.autoTourEnabled = false;
-      if (controls) controls.autoRotate = false;
-
-      dom.btnWireframe.classList.remove('btn-active');
-      dom.btnXray.classList.remove('btn-active');
-      dom.btnAutotour.classList.remove('btn-active');
-
-      applyExplodeView(0);
-      applyMaterialModes();
-      flyToView('iso', false);
-      showToast('Камера, свет, X-Ray и взрыв-схема сброшены', 'info');
-    }
-
-    /* =========================================================================
-       RAYCASTER: КЛИК (ВЫДЕЛЕНИЕ) И ДВОЙНОЙ КЛИК (ФОКУС НА ДЕТАЛИ)
-       ========================================================================= */
-    const raycaster = new THREE.Raycaster();
-    const pointerNDC = new THREE.Vector2();
-    let pointerDownXY = { x: 0, y: 0 };
-
-    function raycastScene(clientX, clientY) {
-      const rect = renderer.domElement.getBoundingClientRect();
-      pointerNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-      pointerNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-      raycaster.setFromCamera(pointerNDC, camera);
-
-      const visibleMeshes = state.allMeshes.filter((mesh) => {
-        const m = getModelById(mesh.userData.modelId);
-        return m && m.visible && mesh.visible;
-      });
-
-      const hits = raycaster.intersectObjects(visibleMeshes, false);
-      return hits.length ? hits[0] : null;
-    }
-
-    renderer.domElement.addEventListener('pointerdown', (e) => {
-      pointerDownXY = { x: e.clientX, y: e.clientY };
-      if (e.button === 2) state.isRightMouseDown = true;
-      killCameraAnimations();
+    dom.sliderExposure.addEventListener('input', (e) => {
+      lightState.exposure = Number(e.target.value);
+      dom.valExposure.textContent = lightState.exposure.toFixed(2);
+      renderer.toneMappingExposure = lightState.exposure;
     });
 
-    window.addEventListener('pointerup', (e) => {
-      if (e.button === 2) state.isRightMouseDown = false;
+    dom.sliderSunIntensity.addEventListener('input', (e) => {
+      lightState.sunIntensity = Number(e.target.value);
+      dom.valSunIntensity.textContent = lightState.sunIntensity.toFixed(2);
+      sunLight.intensity = lightState.sunIntensity;
     });
 
-    renderer.domElement.addEventListener('wheel', () => killCameraAnimations(), { passive: true });
-
-    renderer.domElement.addEventListener('click', (e) => {
-      if (state.isGizmoDragging || state.wasGizmoDragging) return;
-      const dist = Math.hypot(e.clientX - pointerDownXY.x, e.clientY - pointerDownXY.y);
-      if (dist > 5) return;
-
-      const hit = raycastScene(e.clientX, e.clientY);
-      if (!hit) {
-        if (!e.ctrlKey && !e.metaKey) clearSelection();
-        return;
-      }
-
-      const modelId = hit.object.userData.modelId;
-      if (modelId) {
-        selectModels([modelId], e.ctrlKey || e.metaKey);
-      }
+    dom.sliderSunAzimuth.addEventListener('input', (e) => {
+      lightState.sunAzimuth = Number(e.target.value);
+      dom.valSunAzimuth.textContent = lightState.sunAzimuth + '°';
+      updateSunAndShadowBounds();
     });
 
-    renderer.domElement.addEventListener('dblclick', (e) => {
-      if (state.isGizmoDragging) return;
-      const hit = raycastScene(e.clientX, e.clientY);
-      if (!hit) return;
-
-      const mesh = hit.object;
-      const modelId = mesh.userData.modelId;
-      if (modelId) {
-        selectModels([modelId], false);
-        state.selectedSubMesh = mesh;
-        updateSelectionHelper();
-        renderOutliner();
-      }
-      focusOnObject(mesh);
+    dom.sliderSunElevation.addEventListener('input', (e) => {
+      lightState.sunElevation = Number(e.target.value);
+      dom.valSunElevation.textContent = lightState.sunElevation + '°';
+      updateSunAndShadowBounds();
     });
 
-    /* =========================================================================
-       КЛАВИАТУРА: ГОРЯЧИЕ КЛАВИШИ + СВОБОДНЫЙ ПОЛЁТ WASD/СТРЕЛКИ + Q/E
-       ========================================================================= */
-    function isTypingInField(target) {
-      if (!target) return false;
-      const tag = target.tagName;
-      return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
-    }
-
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Shift') {
-        state.isShiftDown = true;
-        updateGizmoSnapping();
-      }
-
-      if (isTypingInField(e.target)) return;
-
-      if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ') {
-        e.preventDefault();
-        performUndo();
-        return;
-      }
-
-      if (e.code === 'Escape') {
-        if (dom.bpModal.classList.contains('open')) {
-          dom.bpModal.classList.remove('open');
-          return;
-        }
-        if (dom.helpModal.classList.contains('open')) {
-          dom.helpModal.classList.remove('open');
-          return;
-        }
-        clearSelection();
-        return;
-      }
-
-      const viewMap = {
-        Digit1: 'iso',
-        Digit2: 'front',
-        Digit3: 'back',
-        Digit4: 'left',
-        Digit5: 'right',
-        Digit6: 'top'
-      };
-      if (viewMap[e.code] && !e.ctrlKey && !e.altKey) {
-        flyToView(viewMap[e.code], true);
-        return;
-      }
-
-      if (e.code === 'KeyF' && !e.ctrlKey && !e.metaKey) {
-        focusOnSelection();
-        return;
-      }
-      if (e.code === 'Home') {
-        e.preventDefault();
-        flyToView('iso', false);
-        return;
-      }
-
-      const hasSelection = state.selectedModelIds.size > 0;
-      if (hasSelection && !state.isRightMouseDown && !e.ctrlKey && !e.metaKey) {
-        if (e.code === 'KeyG' || e.code === 'KeyT') {
-          setGizmoMode('translate');
-          return;
-        }
-        if (e.code === 'KeyR') {
-          setGizmoMode('rotate');
-          return;
-        }
-        if (e.code === 'KeyS') {
-          setGizmoMode('scale');
-          return;
-        }
-      }
-
-      if ([
-        'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE',
-        'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'
-      ].includes(e.code)) {
-        if (e.code.startsWith('Arrow')) e.preventDefault();
-        keysHeld.add(e.code);
-      }
+    dom.sliderFill.addEventListener('input', (e) => {
+      lightState.fillIntensity = Number(e.target.value);
+      dom.valFill.textContent = lightState.fillIntensity.toFixed(2);
+      applyFillLight(lightState.fillIntensity);
     });
 
-    window.addEventListener('keyup', (e) => {
-      if (e.key === 'Shift') {
-        state.isShiftDown = false;
-        updateGizmoSnapping();
-      }
-      keysHeld.delete(e.code);
-    });
-
-    window.addEventListener('blur', () => {
-      keysHeld.clear();
-      state.isShiftDown = false;
-      state.isRightMouseDown = false;
-      updateGizmoSnapping();
-    });
-
-    const moveForward = new THREE.Vector3();
-    const moveRight = new THREE.Vector3();
-    const moveDelta = new THREE.Vector3();
-    const worldUp = new THREE.Vector3(0, 1, 0);
-
-    function updateKeyboardMovement(dt) {
-      if (keysHeld.size === 0) return;
-
-      const distToTarget = controls ? camera.position.distanceTo(controls.target) : 8;
-      const speed = Math.max(distToTarget * 0.75, 2.2) * (state.isShiftDown ? 2.2 : 1.0) * dt;
-
-      camera.getWorldDirection(moveForward);
-      moveForward.normalize();
-      moveRight.crossVectors(moveForward, worldUp).normalize();
-      moveDelta.set(0, 0, 0);
-
-      if (keysHeld.has('KeyW') || keysHeld.has('ArrowUp')) moveDelta.add(moveForward);
-      if (keysHeld.has('KeyS') || keysHeld.has('ArrowDown')) moveDelta.sub(moveForward);
-      if (keysHeld.has('KeyD') || keysHeld.has('ArrowRight')) moveDelta.add(moveRight);
-      if (keysHeld.has('KeyA') || keysHeld.has('ArrowLeft')) moveDelta.sub(moveRight);
-      if (keysHeld.has('KeyE')) moveDelta.y += 1;
-      if (keysHeld.has('KeyQ')) moveDelta.y -= 1;
-
-      if (moveDelta.lengthSq() > 0) {
-        killCameraAnimations();
-        moveDelta.normalize().multiplyScalar(speed);
-        camera.position.add(moveDelta);
-        if (controls) controls.target.add(moveDelta);
-      }
-    }
-
-    /* =========================================================================
-       ПРИВЯЗКА UI-СОБЫТИЙ
-       ========================================================================= */
-    document.getElementById('btn-upload').addEventListener('click', () => dom.modelFileInput.click());
-    document.getElementById('btn-empty-upload').addEventListener('click', () => dom.modelFileInput.click());
-    dom.modelFileInput.addEventListener('change', (e) => {
-      handleFilesUpload(e.target.files);
-      e.target.value = '';
-    });
-
-    document.getElementById('btn-demo').addEventListener('click', loadDemoAssembly);
-    document.getElementById('btn-empty-demo').addEventListener('click', loadDemoAssembly);
-
-    let dragDepth = 0;
-    dom.viewportWrap.addEventListener('dragenter', (e) => {
-      e.preventDefault();
-      dragDepth++;
-      dom.dropBanner.classList.add('active');
-    });
-    dom.viewportWrap.addEventListener('dragover', (e) => {
-      e.preventDefault();
-    });
-    dom.viewportWrap.addEventListener('dragleave', () => {
-      dragDepth = Math.max(0, dragDepth - 1);
-      if (dragDepth === 0) dom.dropBanner.classList.remove('active');
-    });
-    dom.viewportWrap.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dragDepth = 0;
-      dom.dropBanner.classList.remove('active');
-      if (e.dataTransfer && e.dataTransfer.files) {
-        handleFilesUpload(e.dataTransfer.files);
-      }
-    });
-
-    document.querySelectorAll('.tab-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const target = btn.dataset.tab;
-        document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b === btn));
-        document.querySelectorAll('.tab-pane').forEach((p) => {
-          p.classList.toggle('active', p.id === 'tab-' + target);
-        });
-      });
-    });
-
-    dom.btnToggleSidebar.addEventListener('click', () => {
-      const collapsed = dom.sidebar.classList.toggle('collapsed');
-      dom.btnToggleSidebar.classList.toggle('btn-active', !collapsed);
-      setTimeout(handleResize, 220);
-    });
-
-    document.querySelectorAll('[data-view]').forEach((btn) => {
-      btn.addEventListener('click', () => flyToView(btn.dataset.view, true));
-    });
-    document.getElementById('btn-focus').addEventListener('click', focusOnSelection);
-    document.getElementById('btn-home').addEventListener('click', () => flyToView('iso', false));
-
-    dom.btnGizmoTranslate.addEventListener('click', () => setGizmoMode('translate'));
-    dom.btnGizmoRotate.addEventListener('click', () => setGizmoMode('rotate'));
-    dom.btnGizmoScale.addEventListener('click', () => setGizmoMode('scale'));
-    dom.btnUndo.addEventListener('click', performUndo);
-
-    dom.btnWireframe.addEventListener('click', () => {
-      state.wireframeEnabled = !state.wireframeEnabled;
-      dom.btnWireframe.classList.toggle('btn-active', state.wireframeEnabled);
-      applyMaterialModes();
-    });
-
-    dom.btnXray.addEventListener('click', () => {
-      state.xrayEnabled = !state.xrayEnabled;
-      dom.btnXray.classList.toggle('btn-active', state.xrayEnabled);
-      applyMaterialModes();
-    });
-
-    dom.btnAutotour.addEventListener('click', () => {
-      state.autoTourEnabled = !state.autoTourEnabled;
-      dom.btnAutotour.classList.toggle('btn-active', state.autoTourEnabled);
-      if (controls) controls.autoRotate = state.autoTourEnabled;
-    });
-
-    document.getElementById('btn-screenshot').addEventListener('click', takeScreenshotPNG);
-    document.getElementById('btn-export-glb').addEventListener('click', exportSceneGLB);
-    document.getElementById('btn-reset-all').addEventListener('click', resetAll);
-
-    document.getElementById('btn-select-all').addEventListener('click', () => {
-      selectModels(state.loadedModels.map((m) => m.id), false);
-    });
-    document.getElementById('btn-deselect').addEventListener('click', clearSelection);
-    document.getElementById('btn-sel-floor').addEventListener('click', () => {
-      dropModelsToFloor(Array.from(state.selectedModelIds));
-    });
-    document.getElementById('btn-sel-reset').addEventListener('click', () => {
-      resetModelsTransform(Array.from(state.selectedModelIds));
-    });
-    document.getElementById('btn-sel-hide').addEventListener('click', () => {
-      const ids = Array.from(state.selectedModelIds);
-      if (!ids.length) return;
-      const anyVisible = ids.some((id) => getModelById(id)?.visible);
-      detachMultiPivot();
-      ids.forEach((id) => {
-        const m = getModelById(id);
-        if (m) {
-          m.visible = !anyVisible;
-          m.root.visible = m.visible;
-        }
-      });
-      attachGizmoToSelection();
-      updateShadowCameraBounds();
-      renderOutliner();
-    });
-
-    dom.sliderExplode.addEventListener('input', (e) => {
-      applyExplodeView(Number(e.target.value));
+    dom.btnShadows.addEventListener('click', () => {
+      applyShadowsEnabled(!lightState.shadows);
     });
 
     document.querySelectorAll('#bg-mode-group .seg-btn').forEach((btn) => {
       btn.addEventListener('click', () => applyBackground(btn.dataset.bg));
     });
 
-    dom.sliderExposure.addEventListener('input', (e) => {
-      state.exposure = Number(e.target.value);
-      dom.valExposure.textContent = state.exposure.toFixed(2);
-      renderer.toneMappingExposure = state.exposure;
+    dom.btnResetLight.addEventListener('click', () => {
+      Object.assign(lightState, DEFAULT_LIGHTING);
+      syncLightingUI();
     });
 
-    dom.sliderAzimuth.addEventListener('input', (e) => {
-      state.sunAzimuth = Number(e.target.value);
-      dom.valAzimuth.textContent = state.sunAzimuth + '°';
-      updateShadowCameraBounds();
+    // Снимок PNG текущего кадра без интерфейса
+    dom.btnSnapshot.addEventListener('click', () => {
+      renderer.render(scene, camera);
+      const dataUrl = renderer.domElement.toDataURL('image/png');
+      const link = document.createElement('a');
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+      link.download = 'classroom_' + stamp + '.png';
+      link.href = dataUrl;
+      link.click();
     });
 
-    dom.sliderElevation.addEventListener('input', (e) => {
-      state.sunElevation = Number(e.target.value);
-      dom.valElevation.textContent = state.sunElevation + '°';
-      updateShadowCameraBounds();
-    });
-
-    dom.sliderShadowOpacity.addEventListener('input', (e) => {
-      state.shadowOpacity = Number(e.target.value);
-      dom.valShadowOpacity.textContent = state.shadowOpacity.toFixed(2);
-      shadowFloorMat.opacity = state.shadowOpacity;
-    });
-
-    dom.btnToggleShadows.addEventListener('click', () => {
-      state.shadowsEnabled = !state.shadowsEnabled;
-      renderer.shadowMap.enabled = state.shadowsEnabled;
-      keyLight.castShadow = state.shadowsEnabled;
-      shadowFloor.visible = state.shadowsEnabled;
-      dom.btnToggleShadows.classList.toggle('btn-active', state.shadowsEnabled);
-      dom.btnToggleShadows.querySelector('span').textContent = state.shadowsEnabled ? 'Тени: ВКЛ' : 'Тени: ВЫКЛ';
-      scene.traverse((obj) => {
-        if (obj.isMesh && obj.material) {
-          const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-          mats.forEach((m) => { m.needsUpdate = true; });
-        }
-      });
-    });
-
-    dom.btnToggleGrid.addEventListener('click', () => {
-      state.gridEnabled = !state.gridEnabled;
-      if (floorGrid) floorGrid.visible = state.gridEnabled;
-      dom.btnToggleGrid.classList.toggle('btn-active', state.gridEnabled);
-      dom.btnToggleGrid.querySelector('span').textContent = state.gridEnabled ? 'Сетка: ВКЛ' : 'Сетка: ВЫКЛ';
-    });
-
-    document.getElementById('btn-reset-lighting').addEventListener('click', resetLighting);
-
-    document.getElementById('btn-save-bookmark').addEventListener('click', saveBookmark);
-    dom.bookmarkNameInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') saveBookmark();
-    });
-
-    document.getElementById('btn-upload-blueprint').addEventListener('click', () => dom.blueprintFileInput.click());
-    dom.blueprintFileInput.addEventListener('change', (e) => {
-      addBlueprints(e.target.files);
-      e.target.value = '';
-    });
-
-    document.getElementById('bp-zoom-in').addEventListener('click', () => setBlueprintZoom(state.bpZoom + 0.25));
-    document.getElementById('bp-zoom-out').addEventListener('click', () => setBlueprintZoom(state.bpZoom - 0.25));
-    document.getElementById('bp-zoom-reset').addEventListener('click', () => setBlueprintZoom(1));
-    document.getElementById('bp-modal-close').addEventListener('click', () => dom.bpModal.classList.remove('open'));
-    dom.bpModal.addEventListener('click', (e) => {
-      if (e.target === dom.bpModal) dom.bpModal.classList.remove('open');
-    });
-
-    document.getElementById('btn-help').addEventListener('click', () => dom.helpModal.classList.add('open'));
-    document.getElementById('help-modal-close').addEventListener('click', () => dom.helpModal.classList.remove('open'));
-    dom.helpModal.addEventListener('click', (e) => {
-      if (e.target === dom.helpModal) dom.helpModal.classList.remove('open');
-    });
+    syncLightingUI();
 
     /* =========================================================================
-       АДАПТАЦИЯ РАЗМЕРА И ГЛАВНЫЙ ЦИКЛ РЕНДЕРА
+       9. АДАПТАЦИЯ РАЗМЕРА И ЦИКЛ РЕНДЕРА
        ========================================================================= */
     function handleResize() {
-      const w = dom.canvasContainer.clientWidth || 1;
-      const h = dom.canvasContainer.clientHeight || 1;
+      const w = dom.viewport.clientWidth || window.innerWidth || 1;
+      const h = dom.viewport.clientHeight || window.innerHeight || 1;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h, false);
     }
 
     window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', () => setTimeout(handleResize, 150));
     if (typeof ResizeObserver !== 'undefined') {
-      new ResizeObserver(handleResize).observe(dom.canvasContainer);
+      new ResizeObserver(handleResize).observe(dom.viewport);
     }
     handleResize();
 
-    const clock = new THREE.Clock();
     function animate() {
       requestAnimationFrame(animate);
-      const dt = Math.min(clock.getDelta(), 0.05);
-      updateKeyboardMovement(dt);
-      if (controls) controls.update();
+      controls.update();
       renderer.render(scene, camera);
     }
     animate();
-
-    window.addEventListener('beforeunload', () => {
-      state.blueprints.forEach((bp) => URL.revokeObjectURL(bp.url));
-    });
   })();
   </script>
 </body>
