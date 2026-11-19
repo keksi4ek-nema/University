@@ -629,8 +629,8 @@
       overview: {
         label: 'Общий план',
         hint: 'Обзор 360° из центра',
-        position: [0.0, 1.62, 0.0],
-        target: [0.0, 1.58, 0.08], // Минимальная дистанция (~8 см) для вращения 360° вокруг себя
+        position: [0.0, 2.50, -4.15],
+        target: [0.0, 2.481, -4.07], // Минимальная дистанция (~8 см) для вращения 360° вокруг себя
         autoFit: true
       },
       windowSide: {
@@ -650,14 +650,14 @@
       teacherDesk: {
         label: 'Стол преподавателя',
         hint: 'Рабочее место преподавателя',
-        position: [0.65, 1.65, 2.75],
+        position: [2.71, 2.10, 6.91],
         target: [2.88, 0.80, 4.88],
         autoFit: true
       },
       studentDesk: {
         label: 'Стол студента',
         hint: 'Рабочее место студента',
-        position: [-1.45, 2.20, -0.35],
+        position: [-1.45, 2.05, -0.35],
         target: [-0.15, 0.78, 1.05],
         autoFit: true
       }
@@ -1146,10 +1146,14 @@
       dom.sliderSunAzimuth.value = String(lightState.sunAzimuth);
       dom.valSunAzimuth.textContent = lightState.sunAzimuth + '°';
 
-      // 1. Общий план — центр комнаты на уровне глаз, target на минимальном расстоянии для 360°
+      // 1. Общий план — обзор 360° с возвышенной позиции, target на минимальном расстоянии для 360°
       if (CAMERA_PRESETS.overview.autoFit) {
-        const pos = new THREE.Vector3(roomCenter.x, eyeY, roomCenter.z);
-        const target = new THREE.Vector3(roomCenter.x, eyeY - 0.04, roomCenter.z + frontSign * 0.08);
+        const pos = clampInsideRoom(new THREE.Vector3(
+          roomCenter.x,
+          Math.min(2.50, roomSize.y * 0.685),
+          roomCenter.z - frontSign * (roomSize.z * 0.237)
+        ));
+        const target = new THREE.Vector3(pos.x, pos.y - 0.019, pos.z + frontSign * 0.08);
         CAMERA_PRESETS.overview.position = [pos.x, pos.y, pos.z];
         CAMERA_PRESETS.overview.target = [target.x, target.y, target.z];
       }
@@ -1194,13 +1198,13 @@
         if (!tBox.isEmpty()) {
           const tCenter = new THREE.Vector3();
           tBox.getCenter(tCenter);
-          // Ставим камеру в свободной центральной зоне перед столом под аккуратным углом 3/4
+          // Ставим камеру со стороны шкафа перед столом преподавателя
           const dirToCenterX = tCenter.x >= roomCenter.x ? -1 : 1;
           const target = new THREE.Vector3(tCenter.x, Math.min(tBox.max.y * 0.66, 0.84), tCenter.z);
           const pos = clampInsideRoom(new THREE.Vector3(
-            tCenter.x + dirToCenterX * 2.15,
-            1.62,
-            tCenter.z - frontSign * 2.05
+            tCenter.x + dirToCenterX * 0.25,
+            2.10,
+            tCenter.z + frontSign * 2.10
           ));
           CAMERA_PRESETS.teacherDesk.position = [pos.x, pos.y, pos.z];
           CAMERA_PRESETS.teacherDesk.target = [target.x, target.y, target.z];
@@ -1218,7 +1222,7 @@
           const target = new THREE.Vector3(dCenter.x, Math.min(deskBox.max.y * 0.68, 0.82), dCenter.z);
           const pos = clampInsideRoom(new THREE.Vector3(
             dCenter.x + sideDir * 1.25,
-            2.20,
+            2.05,
             dCenter.z - frontSign * 1.38
           ));
           CAMERA_PRESETS.studentDesk.position = [pos.x, pos.y, pos.z];
