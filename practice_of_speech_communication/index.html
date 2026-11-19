@@ -650,7 +650,7 @@
       teacherDesk: {
         label: 'Стол преподавателя',
         hint: 'Рабочее место преподавателя',
-        position: [2.60, 2.10, 7.00],
+        position: [0.65, 1.65, 2.75],
         target: [2.88, 0.80, 4.88],
         autoFit: true
       },
@@ -1194,13 +1194,13 @@
         if (!tBox.isEmpty()) {
           const tCenter = new THREE.Vector3();
           tBox.getCenter(tCenter);
-          // Ставим камеру со стороны шкафа с видом на стол преподавателя и аудиторию
+          // Ставим камеру в свободной центральной зоне перед столом под аккуратным углом 3/4
           const dirToCenterX = tCenter.x >= roomCenter.x ? -1 : 1;
           const target = new THREE.Vector3(tCenter.x, Math.min(tBox.max.y * 0.66, 0.84), tCenter.z);
           const pos = clampInsideRoom(new THREE.Vector3(
-            tCenter.x + dirToCenterX * 0.35,
-            2.10,
-            tCenter.z + frontSign * 2.20
+            tCenter.x + dirToCenterX * 2.15,
+            1.62,
+            tCenter.z - frontSign * 2.05
           ));
           CAMERA_PRESETS.teacherDesk.position = [pos.x, pos.y, pos.z];
           CAMERA_PRESETS.teacherDesk.target = [target.x, target.y, target.z];
