@@ -30,7 +30,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './practice_of_speech_communication'
+          path: './practice_of_educational_environment'
 
       - name: Deploy to GitHub Pages
         id: deployment
