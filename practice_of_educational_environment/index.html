@@ -1220,12 +1220,11 @@
         if (deskBox && !deskBox.isEmpty()) {
           const dCenter = new THREE.Vector3();
           deskBox.getCenter(dCenter);
-          const sideDir = dCenter.x >= roomCenter.x ? -1 : 1;
-          const target = new THREE.Vector3(dCenter.x, Math.min(deskBox.max.y * 0.68, 0.82), dCenter.z);
+          const target = new THREE.Vector3(dCenter.x, Math.min(deskBox.max.y * 0.62, 0.72), dCenter.z);
           const pos = clampInsideRoom(new THREE.Vector3(
-            dCenter.x + sideDir * 1.25,
-            2.05,
-            dCenter.z - frontSign * 1.38
+            dCenter.x,
+            1.60,
+            dCenter.z - frontSign * 1.45
           ));
           CAMERA_PRESETS.studentDesk.position = [pos.x, pos.y, pos.z];
           CAMERA_PRESETS.studentDesk.target = [target.x, target.y, target.z];
