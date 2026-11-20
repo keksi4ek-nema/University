@@ -6,9 +6,9 @@
   <title>3D Просмотр аудитории</title>
 
   <!-- Three.js r132 (0.132.2) + GSAP — строго с одного CDN, без ES-модулей -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 
   <style>
@@ -1119,7 +1119,7 @@
         }
 
         if (name === 'Plane.002') boardNode = obj;
-        if (name === 'Cube.004') studentNode = obj;
+        if (name === 'Cube.002' || name === 'Cube.004') studentNode = studentNode || obj;
         if (name === 'Cube.005' || name === 'Cube.006') teacherNodes.push(obj);
       });
 
@@ -1258,6 +1258,7 @@
           mats.forEach((mat) => {
             if (!mat) return;
             if ('envMapIntensity' in mat) mat.envMapIntensity = 0.55;
+            if ('roughness' in mat && mat.roughness === 0) mat.roughness = 0.65;
             mat.needsUpdate = true;
           });
         });
