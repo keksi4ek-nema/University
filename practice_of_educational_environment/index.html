@@ -1158,23 +1158,24 @@
         CAMERA_PRESETS.overview.target = [target.x, target.y, target.z];
       }
 
-      // 2. Оконная зона — ракурс на стену с окнами
+      // 2. Оконная зона — обзор 360° со взглядом на стену с окнами
       if (CAMERA_PRESETS.windowSide.autoFit) {
         const pos = clampInsideRoom(new THREE.Vector3(
           roomCenter.x - windowSign * (roomSize.x * 0.24),
           eyeY + 0.04,
           roomCenter.z - frontSign * (roomSize.z * 0.13)
         ));
-        const target = new THREE.Vector3(
+        const lookAt = new THREE.Vector3(
           windowSign > 0 ? roomBounds.max.x - 0.15 : roomBounds.min.x + 0.15,
           eyeY + 0.02,
           roomCenter.z + frontSign * (roomSize.z * 0.08)
         );
+        const target = pos.clone().add(lookAt.sub(pos).normalize().multiplyScalar(0.08));
         CAMERA_PRESETS.windowSide.position = [pos.x, pos.y, pos.z];
         CAMERA_PRESETS.windowSide.target = [target.x, target.y, target.z];
       }
 
-      // 3. Зона напротив окон — ракурс на внутреннюю стену
+      // 3. Зона напротив окон — обзор 360° со взглядом на внутреннюю стену
       if (CAMERA_PRESETS.innerWall.autoFit) {
         const innerSign = -windowSign;
         const pos = clampInsideRoom(new THREE.Vector3(
@@ -1182,11 +1183,12 @@
           eyeY + 0.04,
           roomCenter.z - frontSign * (roomSize.z * 0.12)
         ));
-        const target = new THREE.Vector3(
+        const lookAt = new THREE.Vector3(
           innerSign > 0 ? roomBounds.max.x - 0.15 : roomBounds.min.x + 0.15,
           eyeY + 0.02,
           roomCenter.z + frontSign * (roomSize.z * 0.09)
         );
+        const target = pos.clone().add(lookAt.sub(pos).normalize().multiplyScalar(0.08));
         CAMERA_PRESETS.innerWall.position = [pos.x, pos.y, pos.z];
         CAMERA_PRESETS.innerWall.target = [target.x, target.y, target.z];
       }
@@ -1487,6 +1489,18 @@
     function animate() {
       requestAnimationFrame(animate);
       controls.update();
+
+      // Не даём камере и точке обзора выходить за пределы стен, пола и потолка
+      const padXZ = 0.35;
+      const padY = 0.25;
+      camera.position.x = THREE.MathUtils.clamp(camera.position.x, roomBounds.min.x + padXZ, roomBounds.max.x - padXZ);
+      camera.position.y = THREE.MathUtils.clamp(camera.position.y, roomBounds.min.y + padY, roomBounds.max.y - padY);
+      camera.position.z = THREE.MathUtils.clamp(camera.position.z, roomBounds.min.z + padXZ, roomBounds.max.z - padXZ);
+
+      controls.target.x = THREE.MathUtils.clamp(controls.target.x, roomBounds.min.x + 0.15, roomBounds.max.x - 0.15);
+      controls.target.y = THREE.MathUtils.clamp(controls.target.y, roomBounds.min.y + 0.15, roomBounds.max.y - 0.15);
+      controls.target.z = THREE.MathUtils.clamp(controls.target.z, roomBounds.min.z + 0.15, roomBounds.max.z - 0.15);
+
       renderer.render(scene, camera);
     }
     animate();
