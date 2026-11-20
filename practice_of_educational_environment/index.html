@@ -1503,6 +1503,7 @@
       renderer.render(scene, camera);
     }
     animate();
+    window.getCam = () => console.log(`position: [${camera.position.toArray().map(n => +n.toFixed(2))}],\ntarget: [${controls.target.toArray().map(n => +n.toFixed(2))}],`);
   })();
   </script>
 </body>
