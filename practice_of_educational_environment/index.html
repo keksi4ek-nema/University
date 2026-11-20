@@ -1213,7 +1213,7 @@
         }
       }
 
-      // 5. Стол студента (выделенный кластер из Cube.004)
+      // 5. Стол студента (выделенный кластер из Cube.002 / Cube.004)
       if (CAMERA_PRESETS.studentDesk.autoFit && studentNode) {
         const allStudentsBox = new THREE.Box3().setFromObject(studentNode);
         const deskBox = findRepresentativeStudentDesk(studentNode, allStudentsBox);
@@ -1223,7 +1223,7 @@
           const target = new THREE.Vector3(dCenter.x, Math.min(deskBox.max.y * 0.62, 0.72), dCenter.z);
           const pos = clampInsideRoom(new THREE.Vector3(
             dCenter.x,
-            1.60,
+            1.55,
             dCenter.z - frontSign * 1.45
           ));
           CAMERA_PRESETS.studentDesk.position = [pos.x, pos.y, pos.z];
